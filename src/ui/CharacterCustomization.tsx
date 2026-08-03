@@ -78,7 +78,9 @@ function ConfigSummary({ config }: { config: CharacterConfig }) {
     <div className="mb-6 p-3 rounded-lg border border-white/10 bg-white/5 text-xs font-mono text-white/50 space-y-1">
       <div className="text-white/30 uppercase tracking-wider text-[10px] mb-2">Live preview</div>
       <div>Skin <span className="text-white/70">{config.skinTone}</span></div>
+      <div>Hair <span className="text-white/70">{config.hairColor}</span></div>
       <div>Tabard <span className="text-emerald-300/80">{config.tunicColor}</span></div>
+      <div>Trim <span className="text-amber-300/80">{config.trimColor}</span></div>
       <div>Glow <span className="text-cyan-300/80">{config.gemColor}</span></div>
       <div>Build <span className="text-white/70">{config.build}</span> · Scale {config.scale.toFixed(2)}×</div>
     </div>

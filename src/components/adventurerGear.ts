@@ -4,18 +4,31 @@ import type { CharacterConfig } from '../game/characterConfig'
 export function findBone(root: THREE.Object3D, part: string): THREE.Bone | null {
   let found: THREE.Bone | null = null
   root.traverse((o) => {
-    if (o instanceof THREE.Bone && o.name.includes(part)) found = o
+    if (
+      o instanceof THREE.Bone &&
+      (o.name.includes(part) || o.name.endsWith(`:${part}`))
+    ) {
+      found = o
+    }
   })
   return found
 }
 
-function mat(color: string, opts: Partial<THREE.MeshStandardMaterialParameters> = {}) {
-  return new THREE.MeshStandardMaterial({
-    color,
-    roughness: 0.65,
-    metalness: 0.05,
-    ...opts,
+function cloneMaterial(mesh: THREE.SkinnedMesh): THREE.MeshStandardMaterial[] {
+  const src = mesh.material
+  const list = Array.isArray(src) ? src : [src]
+  return list.map((m) => {
+    const cloned = (m as THREE.MeshStandardMaterial).clone()
+    cloned.map = null
+    cloned.normalMap = null
+    cloned.roughnessMap = null
+    cloned.metalnessMap = null
+    return cloned
   })
+}
+
+function assignMaterials(mesh: THREE.SkinnedMesh, materials: THREE.MeshStandardMaterial[]) {
+  mesh.material = materials.length === 1 ? materials[0] : materials
 }
 
 export function tintHumanBase(root: THREE.Object3D, config: CharacterConfig) {
@@ -29,28 +42,74 @@ export function tintHumanBase(root: THREE.Object3D, config: CharacterConfig) {
       return
     }
 
-    const m = (mesh.material as THREE.MeshStandardMaterial).clone()
-    m.map = null
-    m.normalMap = null
-    m.roughnessMap = null
-    m.metalnessMap = null
+    const materials = cloneMaterial(mesh)
 
-    if (name.includes('head') || name.includes('face') || name.includes('hand')) {
-      m.color.set(config.skinTone)
-      m.roughness = 0.48
-      m.metalness = 0.02
-    } else if (name.includes('leg') || name.includes('foot') || name.includes('thigh')) {
-      m.color.set('#2c2a32')
-      m.roughness = 0.88
+    if (name.includes('visor')) {
+      // Exposed face / skin through helmet opening
+      materials.forEach((m) => {
+        m.color.set(config.skinTone)
+        m.roughness = 0.42
+        m.metalness = 0.04
+      })
+    } else if (
+      name.includes('head') ||
+      name.includes('face') ||
+      name.includes('hand')
+    ) {
+      materials.forEach((m) => {
+        m.color.set(config.skinTone)
+        m.roughness = 0.48
+        m.metalness = 0.02
+      })
+    } else if (
+      name.includes('leg') ||
+      name.includes('foot') ||
+      name.includes('thigh')
+    ) {
+      materials.forEach((m) => {
+        m.color.set('#2c2a32')
+        m.roughness = 0.88
+      })
+    } else if (name.includes('mesh') || name.includes('body') || name.includes('vanguard')) {
+      // Vanguard single body mesh — undersuit, tabard overlay carries tunic color
+      materials.forEach((m) => {
+        m.color.set('#3a4048')
+        m.roughness = 0.78
+        m.metalness = 0.08
+      })
     } else {
-      m.color.set(config.tunicColor)
-      m.roughness = 0.72
+      materials.forEach((m) => {
+        m.color.set(config.tunicColor)
+        m.roughness = 0.72
+      })
     }
-    m.needsUpdate = true
-    mesh.material = m
+
+    materials.forEach((m) => {
+      m.needsUpdate = true
+    })
+    assignMaterials(mesh, materials)
     mesh.castShadow = true
     mesh.receiveShadow = true
   })
+}
+
+function mat(color: string, opts: Partial<THREE.MeshStandardMaterialParameters> = {}) {
+  return new THREE.MeshStandardMaterial({
+    color,
+    roughness: 0.65,
+    metalness: 0.05,
+    ...opts,
+  })
+}
+
+export function buildSkinNeck(config: CharacterConfig): THREE.Mesh {
+  const neck = new THREE.Mesh(
+    new THREE.BoxGeometry(0.2, 0.14, 0.2),
+    mat(config.skinTone, { roughness: 0.45 }),
+  )
+  neck.position.set(0, -0.06, 0.02)
+  neck.castShadow = true
+  return neck
 }
 
 export function buildTail(config: CharacterConfig): THREE.Group {
@@ -82,32 +141,32 @@ export function buildTail(config: CharacterConfig): THREE.Group {
 
 export function buildHair(config: CharacterConfig): THREE.Group {
   const hair = new THREE.Group()
-  const spikes: Array<[number, number, number, number, number]> = [
-    [0, 0.12, 0.04, 0.5, 0],
-    [0.08, 0.1, 0.02, 0.4, -0.6],
-    [-0.08, 0.1, 0.02, 0.4, 0.55],
-    [0.14, 0.06, -0.02, 0.35, -1.1],
-    [-0.14, 0.06, -0.02, 0.35, 1.0],
-    [0.04, 0.16, 0.06, 0.55, 0.2],
-    [-0.05, 0.14, 0.05, 0.5, -0.3],
-    [0.1, 0.14, -0.04, 0.45, -0.8],
-    [-0.1, 0.13, -0.05, 0.42, 0.7],
-    [0, 0.18, -0.02, 0.6, 0.5],
-    [0.06, 0.08, 0.08, 0.38, 0.1],
-    [-0.06, 0.09, 0.07, 0.36, -0.15],
-    [0.12, 0.11, 0, 0.4, -0.45],
-    [-0.12, 0.1, 0, 0.38, 0.4],
-    [0.02, 0.2, 0.02, 0.52, 0.35],
-    [-0.03, 0.19, 0.01, 0.48, -0.25],
-    [0.07, 0.15, -0.06, 0.44, -0.95],
-    [-0.07, 0.14, -0.07, 0.42, 0.85],
-    [0, 0.09, -0.08, 0.4, 1.2],
-    [0.15, 0.04, -0.04, 0.32, -1.4],
-    [-0.15, 0.04, -0.05, 0.3, 1.3],
+  const spikes: Array<[number, number, number, number, number, number]> = [
+    [0, 0.22, 0.06, 0.55, 0, 0.34],
+    [0.08, 0.18, 0.04, 0.42, -0.6, 0.3],
+    [-0.08, 0.18, 0.04, 0.42, 0.55, 0.3],
+    [0.14, 0.12, 0, 0.38, -1.1, 0.28],
+    [-0.14, 0.12, 0, 0.38, 1.0, 0.28],
+    [0.04, 0.28, 0.08, 0.58, 0.2, 0.36],
+    [-0.05, 0.26, 0.07, 0.52, -0.3, 0.34],
+    [0.1, 0.24, -0.02, 0.48, -0.8, 0.32],
+    [-0.1, 0.22, -0.03, 0.45, 0.7, 0.3],
+    [0, 0.32, 0.02, 0.62, 0.5, 0.38],
+    [0.06, 0.14, 0.1, 0.4, 0.1, 0.28],
+    [-0.06, 0.15, 0.09, 0.38, -0.15, 0.28],
+    [0.12, 0.18, 0.02, 0.42, -0.45, 0.3],
+    [-0.12, 0.16, 0.02, 0.4, 0.4, 0.3],
+    [0.02, 0.34, 0.04, 0.55, 0.35, 0.36],
+    [-0.03, 0.32, 0.03, 0.5, -0.25, 0.34],
+    [0.07, 0.26, -0.04, 0.46, -0.95, 0.32],
+    [-0.07, 0.24, -0.05, 0.44, 0.85, 0.32],
+    [0, 0.16, -0.1, 0.42, 1.2, 0.3],
+    [0.15, 0.08, -0.04, 0.34, -1.4, 0.26],
+    [-0.15, 0.08, -0.05, 0.32, 1.3, 0.26],
   ]
-  spikes.forEach(([x, y, z, rz, ry], i) => {
+  spikes.forEach(([x, y, z, rz, ry, scale]) => {
     const cone = new THREE.Mesh(
-      new THREE.ConeGeometry(0.055, 0.28, 5),
+      new THREE.ConeGeometry(0.055 * scale, 0.28 * scale, 5),
       mat(config.hairColor, { roughness: 0.92 }),
     )
     cone.position.set(x, y, z)
@@ -115,7 +174,7 @@ export function buildHair(config: CharacterConfig): THREE.Group {
     cone.castShadow = true
     hair.add(cone)
   })
-  hair.position.set(0, 0.08, 0.02)
+  hair.position.set(0, 0.04, 0.02)
   return hair
 }
 
@@ -151,6 +210,28 @@ export function buildTabard(config: CharacterConfig): THREE.Group {
   trimBottom.position.set(0, -0.42, 0.15)
   tabard.add(trimBottom)
 
+  const trimSides = new THREE.Mesh(
+    new THREE.BoxGeometry(0.05, 0.7, 0.02),
+    mat(config.trimColor, { metalness: 0.65, roughness: 0.35 }),
+  )
+  trimSides.position.set(0.3, -0.05, 0.15)
+  tabard.add(trimSides)
+  const trimSidesL = trimSides.clone()
+  trimSidesL.position.x = -0.3
+  tabard.add(trimSidesL)
+
+  const gem = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.08, 0),
+    mat(config.gemColor, {
+      emissive: config.gemColor,
+      emissiveIntensity: 2.2,
+      roughness: 0.2,
+      metalness: 0.35,
+    }),
+  )
+  gem.position.set(0, 0.1, 0.18)
+  tabard.add(gem)
+
   tabard.position.set(0, 0.12, 0)
   return tabard
 }
@@ -180,10 +261,10 @@ export function buildBelt(config: CharacterConfig): THREE.Group {
   return belt
 }
 
-export function buildChainSleeve(): THREE.Mesh {
+export function buildChainSleeve(trimColor: string): THREE.Mesh {
   return new THREE.Mesh(
     new THREE.CylinderGeometry(0.09, 0.1, 0.38, 10),
-    mat('#6a7278', { metalness: 0.62, roughness: 0.42 }),
+    mat(trimColor, { metalness: 0.62, roughness: 0.42 }),
   )
 }
 
@@ -238,7 +319,7 @@ export function buildSheathedBlades(): THREE.Group {
   return g
 }
 
-export function buildArcaneSword(gemColor: string): THREE.Group {
+export function buildArcaneSword(gemColor: string, trimColor = '#d4af37'): THREE.Group {
   const sword = new THREE.Group()
   const blade = new THREE.Mesh(
     new THREE.BoxGeometry(0.14, 0.92, 0.05),
@@ -266,7 +347,7 @@ export function buildArcaneSword(gemColor: string): THREE.Group {
 
   const guard = new THREE.Mesh(
     new THREE.BoxGeometry(0.26, 0.05, 0.1),
-    mat('#d4af37', { metalness: 0.75, roughness: 0.3 }),
+    mat(trimColor, { metalness: 0.75, roughness: 0.3 }),
   )
   sword.add(guard)
 

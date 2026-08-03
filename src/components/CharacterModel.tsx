@@ -14,6 +14,7 @@ import {
   buildGauntlet,
   buildHair,
   buildSheathedBlades,
+  buildSkinNeck,
   buildTabard,
   buildTail,
   findBone,
@@ -105,6 +106,10 @@ export function CharacterModel({
     }
 
     if (head) {
+      const neck = buildSkinNeck(config)
+      head.add(neck)
+      cleanups.push(() => head.remove(neck))
+
       const hair = buildHair(config)
       head.add(hair)
       cleanups.push(() => head.remove(hair))
@@ -117,13 +122,13 @@ export function CharacterModel({
     }
 
     if (rightArm) {
-      const sleeve = buildChainSleeve()
+      const sleeve = buildChainSleeve(config.trimColor)
       sleeve.position.y = -0.18
       rightArm.add(sleeve)
       cleanups.push(() => rightArm.remove(sleeve))
     }
     if (leftArm) {
-      const sleeve = buildChainSleeve()
+      const sleeve = buildChainSleeve(config.trimColor)
       sleeve.position.y = -0.18
       leftArm.add(sleeve)
       cleanups.push(() => leftArm.remove(sleeve))
@@ -143,7 +148,7 @@ export function CharacterModel({
     }
 
     if (rightHand && showWeapon) {
-      const sword = buildArcaneSword(config.gemColor)
+      const sword = buildArcaneSword(config.gemColor, config.trimColor)
       rightHand.add(sword)
       swordRef.current = sword
       sword.position.set(0, 0.08, 0.1)
