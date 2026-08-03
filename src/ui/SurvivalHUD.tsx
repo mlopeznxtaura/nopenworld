@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { usePlayerStore } from '../game/playerState'
+import { useCharacter } from '../game/characterState'
 import { liveTimeSnapshot } from '../game/timeState'
 
 export function SurvivalHUD() {
   const { snapRef } = usePlayerStore()
+  const { viewMode } = useCharacter()
   const [ui, setUi] = useState({
     health: 5,
     stamina: 100,
@@ -89,12 +91,16 @@ export function SurvivalHUD() {
         <div className="text-xs tracking-widest text-white/50">
           {ui.isDaylight ? '☀ DAY' : `☾ NIGHT ${Math.round(ui.nightFactor * 100)}%`}
         </div>
+        <div className="text-xs text-white/40 mt-1">
+          VIEW: {viewMode === 'first' ? '1ST PERSON' : '3RD PERSON'} · Tab to toggle
+        </div>
       </div>
 
       <div className="absolute bottom-4 left-4 z-30 pointer-events-none text-white/40 text-xs font-mono">
         <div>F — chop / gather</div>
         <div>E — melee attack</div>
         <div>SHIFT — sprint</div>
+        <div>TAB — switch view</div>
       </div>
     </>
   )

@@ -1,9 +1,10 @@
 import { useFrame, useThree } from '@react-three/fiber'
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { usePlayerControls } from '../hooks/usePlayerControls'
 import { getTerrainHeight } from '../utils/noise'
 import { usePlayerStore } from '../game/playerState'
+import { useCharacter } from '../game/characterState'
 import { playClangSound } from '../audio/spatial'
 import { attackSwingRef } from './PlayerAvatar'
 
@@ -16,6 +17,8 @@ const STAMINA_SPRINT_DRAIN = 18
 const STAMINA_REGEN = 22
 const SPAWN_X = 5
 const SPAWN_Z = 4
+const THIRD_PERSON_DIST = 4.8
+const THIRD_PERSON_HEIGHT = 1.6
 
 export type MeleeTarget = {
   position: THREE.Vector3
@@ -36,6 +39,7 @@ export function registerMeleeTarget(t: MeleeTarget) {
 export function Player() {
   const { camera } = useThree()
   const controls = usePlayerControls()
+  const { viewModeRef, toggleViewMode } = useCharacter()
   const {
     positionRef,
     setPosition,
@@ -51,6 +55,17 @@ export function Player() {
   const direction = useRef(new THREE.Vector3())
   const attackCooldown = useRef(0)
   const spawned = useRef(false)
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code === 'Tab') {
+        e.preventDefault()
+        toggleViewMode()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [toggleViewMode])
 
   useFrame((state, delta) => {
     if (!spawned.current) {
@@ -136,7 +151,16 @@ export function Player() {
       camera.position.y += (Math.random() - 0.5) * snapRef.current.screenShake
     }
 
-    camera.position.copy(positionRef.current)
+    const yaw = camera.rotation.y
+    if (viewModeRef.current === 'third') {
+      camera.position.set(
+        positionRef.current.x + Math.sin(yaw) * THIRD_PERSON_DIST,
+        positionRef.current.y + THIRD_PERSON_HEIGHT,
+        positionRef.current.z + Math.cos(yaw) * THIRD_PERSON_DIST,
+      )
+    } else {
+      camera.position.copy(positionRef.current)
+    }
   })
 
   return null
