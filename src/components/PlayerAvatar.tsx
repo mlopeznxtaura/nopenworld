@@ -7,7 +7,10 @@ import { CharacterModel } from './CharacterModel'
 
 export const attackSwingRef = { current: 0 }
 
+/** Eye height — matches Player.tsx PLAYER_HEIGHT */
 const PLAYER_HEIGHT = 1.75
+/** Soldier.glb feet sit slightly below local origin; lift to plant on terrain */
+const MODEL_FOOT_OFFSET = 0.02
 
 function lerpAngle(a: number, b: number, t: number) {
   let diff = b - a
@@ -16,10 +19,10 @@ function lerpAngle(a: number, b: number, t: number) {
   return a + diff * t
 }
 
-/** Full 3D character — faces movement direction, animated walk/run. */
+/** Full 3D character — visible in third person; hidden in first person. */
 export function PlayerAvatar() {
   const { positionRef, moveStateRef } = usePlayerStore()
-  const { config } = useCharacter()
+  const { config, viewModeRef } = useCharacter()
   const groupRef = useRef<THREE.Group>(null)
   const bodyRef = useRef<THREE.Group>(null)
   const facing = useRef(0)
@@ -35,26 +38,27 @@ export function PlayerAvatar() {
 
     groupRef.current.position.set(
       positionRef.current.x,
-      positionRef.current.y - PLAYER_HEIGHT,
+      positionRef.current.y - PLAYER_HEIGHT + MODEL_FOOT_OFFSET,
       positionRef.current.z,
     )
-    groupRef.current.rotation.y = facing.current
+    groupRef.current.rotation.y = facing.current + Math.PI
 
-    if (move.isMoving) {
-      bobPhase.current += delta * (move.isSprinting ? 14 : 10)
-      const bob = Math.sin(bobPhase.current) * 0.04 * Math.min(1, move.speed / 4)
-      bodyRef.current.position.y = -0.92 + bob
-    } else {
-      bodyRef.current.position.y = -0.92
-      bobPhase.current = 0
-    }
+    const bob = move.isMoving
+      ? Math.sin(bobPhase.current) * 0.035 * Math.min(1, move.speed / 4)
+      : 0
+    if (move.isMoving) bobPhase.current += delta * (move.isSprinting ? 14 : 10)
+    else bobPhase.current = 0
+
+    bodyRef.current.position.y = bob
+
+    bodyRef.current.visible = viewModeRef.current === 'third'
 
     if (attackSwingRef.current > 0) attackSwingRef.current -= delta
   })
 
   return (
     <group ref={groupRef}>
-      <group ref={bodyRef} position={[0, -0.92, 0]}>
+      <group ref={bodyRef}>
         <CharacterModel
           config={config}
           attackSwingRef={attackSwingRef}

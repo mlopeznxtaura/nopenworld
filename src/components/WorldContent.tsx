@@ -37,7 +37,7 @@ export function WorldContent() {
       <Fauna />
       <HazardZone />
       <Chest id="chest-hazard" x={-38} z={37} loot={{ rupees: 25, food: 2 }} />
-      <Chest id="chest-shrine-reward" x={-22} z={-8} loot={{ rupees: 10 }} />
+      <Chest id="chest-shrine-reward" x={-14} z={-6} loot={{ rupees: 10 }} />
       <PlayerAvatar />
     </>
   )

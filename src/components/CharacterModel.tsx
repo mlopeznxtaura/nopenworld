@@ -194,7 +194,7 @@ export function CharacterModel({
 
     if (!preview && viewModeRef.current === 'first') {
       headMeshesRef.current.forEach((m) => { m.visible = false })
-    } else {
+    } else if (!preview) {
       headMeshesRef.current.forEach((m) => { m.visible = true })
     }
 

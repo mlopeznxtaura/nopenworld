@@ -16,10 +16,12 @@ export type ShrineSpot = {
   z: number
   puzzle: ShrinePuzzleType
   name: string
+  difficulty: 'easy' | 'medium' | 'hard'
 }
 
-const INTERACT_RADIUS = 3.5
-const PLATE_RADIUS = 1.8
+const TORCH_RADIUS = 3.8
+const PLATE_RADIUS = 2.4
+const PLATE_STAND_TIME = 0.85
 
 function ShrineTorch({
   shrineId,
@@ -41,15 +43,17 @@ function ShrineTorch({
     () => getShrinePuzzle(shrineId).torches?.[index] ?? false,
   )
   const cooldown = useRef(0)
+  const pulse = useRef(0)
   const tx = shrineX + offset[0]
   const tz = shrineZ + offset[1]
 
   useFrame((_, delta) => {
+    pulse.current += delta * 3
     if (lit || isShrineComplete(shrineId)) return
     if (cooldown.current > 0) cooldown.current -= delta
     if (!controls.interact || cooldown.current > 0) return
     const dist = Math.hypot(positionRef.current.x - tx, positionRef.current.z - tz)
-    if (dist > 2) return
+    if (dist > TORCH_RADIUS) return
     cooldown.current = 0.4
     lightShrineTorch(shrineId, index)
     setLit(true)
@@ -57,6 +61,7 @@ function ShrineTorch({
   })
 
   const done = lit || isShrineComplete(shrineId)
+  const hintPulse = 0.5 + Math.sin(pulse.current) * 0.5
 
   return (
     <group position={[offset[0], 0, offset[1]]}>
@@ -73,10 +78,23 @@ function ShrineTorch({
           <pointLight position={[0, 1.35, 0]} color="#ff8833" intensity={8} distance={10} decay={2} />
         </>
       ) : (
-        <mesh position={[0, 1.25, 0]}>
-          <sphereGeometry args={[0.12, 6, 6]} />
-          <meshStandardMaterial color="#2a2820" roughness={0.9} />
-        </mesh>
+        <>
+          <mesh position={[0, 1.25, 0]}>
+            <sphereGeometry args={[0.14, 6, 6]} />
+            <meshStandardMaterial
+              color="#4a4035"
+              emissive="#ffaa44"
+              emissiveIntensity={0.6 + hintPulse * 0.8}
+            />
+          </mesh>
+          <pointLight
+            position={[0, 1.4, 0]}
+            color="#ffcc66"
+            intensity={2 + hintPulse * 3}
+            distance={8}
+            decay={2}
+          />
+        </>
       )}
     </group>
   )
@@ -103,6 +121,7 @@ function ShrineTarget({
   )
   const posVec = useRef(new THREE.Vector3())
   const hitRef = useRef(hit)
+  const pulse = useRef(index * 0.5)
 
   useEffect(() => {
     hitRef.current = hit
@@ -111,7 +130,7 @@ function ShrineTarget({
   useEffect(() => {
     return registerMeleeTarget({
       position: posVec.current,
-      radius: 1.2,
+      radius: 2.2,
       onHit: () => {
         if (hitRef.current || isShrineComplete(shrineId)) return
         hitShrineTarget(shrineId, index)
@@ -120,11 +139,13 @@ function ShrineTarget({
     })
   }, [shrineId, index, hitShrineTarget, isShrineComplete])
 
-  useFrame(() => {
+  useFrame((_, delta) => {
+    pulse.current += delta * 4
     posVec.current.set(shrineX + offset[0], shrineY + 2.5, shrineZ + offset[1])
   })
 
   const done = hit || isShrineComplete(shrineId)
+  const pulseEmissive = 1.5 + Math.sin(pulse.current) * 1.2
 
   return (
     <group position={[offset[0], 0, offset[1]]}>
@@ -133,13 +154,16 @@ function ShrineTarget({
         <meshStandardMaterial color="#4a5568" roughness={0.85} />
       </mesh>
       <mesh position={[0, 2.5, 0]} rotation={[0.3, 0, 0]}>
-        <boxGeometry args={[0.8, 0.5, 0.05]} />
+        <boxGeometry args={[0.9, 0.55, 0.05]} />
         <meshStandardMaterial
           color={done ? '#334155' : '#ef4444'}
           emissive={done ? '#000' : '#ff2200'}
-          emissiveIntensity={done ? 0 : 2}
+          emissiveIntensity={done ? 0 : pulseEmissive}
         />
       </mesh>
+      {!done && (
+        <pointLight position={[0, 2.5, 0]} color="#ff4422" intensity={4 + pulseEmissive} distance={6} decay={2} />
+      )}
     </group>
   )
 }
@@ -171,7 +195,7 @@ function ShrinePlate({
     const dist = Math.hypot(positionRef.current.x - px, positionRef.current.z - pz)
     if (dist < PLATE_RADIUS) {
       standTime.current += delta
-      if (standTime.current >= 1.2) {
+      if (standTime.current >= PLATE_STAND_TIME) {
         activateShrinePlate(shrineId, index)
         setActive(true)
       }
@@ -181,6 +205,7 @@ function ShrinePlate({
   })
 
   const done = active || isShrineComplete(shrineId)
+  const progress = Math.min(1, standTime.current / PLATE_STAND_TIME)
 
   return (
     <group position={[offset[0], 0.05, offset[1]]}>
@@ -189,14 +214,20 @@ function ShrinePlate({
         <meshStandardMaterial
           color={done ? '#4a7c59' : '#3d4a55'}
           emissive={done ? '#2d6a4f' : '#1e3a5f'}
-          emissiveIntensity={done ? 1.2 : 0.3}
+          emissiveIntensity={done ? 1.2 : 0.3 + progress * 1.5}
         />
       </mesh>
+      {!done && progress > 0.05 && (
+        <mesh position={[0, 0.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.5, 1.1, 16, 1, 0, Math.PI * 2 * progress]} />
+          <meshStandardMaterial color="#88ffaa" emissive="#44ff88" emissiveIntensity={2} side={THREE.DoubleSide} />
+        </mesh>
+      )}
     </group>
   )
 }
 
-function ShrineBuilding({ complete }: { complete: boolean }) {
+function ShrineBuilding({ complete, name }: { complete: boolean; name: string }) {
   return (
     <group>
       <mesh position={[0, 1.5, 0]} castShadow receiveShadow>
@@ -222,6 +253,9 @@ function ShrineBuilding({ complete }: { complete: boolean }) {
           opacity={0.7}
         />
       </mesh>
+      {!complete && (
+        <pointLight position={[0, 3, 0]} color="#66aaff" intensity={6} distance={18} decay={2} />
+      )}
       {complete && (
         <mesh position={[0, 2, 0]}>
           <octahedronGeometry args={[0.5, 0]} />
@@ -237,25 +271,28 @@ export function Shrine({ id, x, z, puzzle, name }: ShrineSpot) {
   const complete = isShrineComplete(id)
   const y = getTerrainHeight(x, z)
 
+  // Easy: torches close to shrine entrance
   const torchOffsets: [number, number][] = [
-    [-3, -2],
-    [3, -2],
-    [0, 3],
+    [-2.5, -2],
+    [2.5, -2],
+    [0, 2.5],
   ]
+  // Medium: targets in a triangle — walk closer to each (3m from center)
   const targetOffsets: [number, number][] = [
-    [-4, 0],
-    [4, 0],
-    [0, -4],
+    [-3, 0],
+    [3, 0],
+    [0, -3],
   ]
+  // Hard: plates farther apart — must visit each corner
   const plateOffsets: [number, number][] = [
-    [-2.5, 2],
-    [2.5, 2],
-    [0, -2.5],
+    [-3, 2.5],
+    [3, 2.5],
+    [0, -3],
   ]
 
   return (
     <group position={[x, y, z]}>
-      <ShrineBuilding complete={complete} />
+      <ShrineBuilding complete={complete} name={name} />
       {!complete && puzzle === 'torch' &&
         torchOffsets.map((o, i) => (
           <ShrineTorch
@@ -290,18 +327,14 @@ export function Shrine({ id, x, z, puzzle, name }: ShrineSpot) {
             shrineZ={z}
           />
         ))}
-      <mesh position={[0, 4.5, 0]}>
-        <boxGeometry args={[name.length * 0.15 + 1, 0.4, 0.05]} />
-        <meshStandardMaterial color="#0a1520" transparent opacity={0.6} />
-      </mesh>
     </group>
   )
 }
 
 export const SHRINE_SPOTS: ShrineSpot[] = [
-  { id: 'shrine-forest', x: -25, z: -10, puzzle: 'torch', name: 'Forest Trial' },
-  { id: 'shrine-ruins', x: -55, z: 25, puzzle: 'target', name: 'Ruins Trial' },
-  { id: 'shrine-hill', x: 60, z: -40, puzzle: 'plates', name: 'Hill Trial' },
+  { id: 'shrine-forest', x: -16, z: -8, puzzle: 'torch', name: 'Forest Trial', difficulty: 'easy' },
+  { id: 'shrine-ruins', x: -42, z: 22, puzzle: 'target', name: 'Ruins Trial', difficulty: 'medium' },
+  { id: 'shrine-hill', x: 50, z: -32, puzzle: 'plates', name: 'Hill Trial', difficulty: 'hard' },
 ]
 
 export function Shrines() {

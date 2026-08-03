@@ -195,7 +195,7 @@ export function SurvivalHUD() {
         <div>E — melee attack</div>
         <div>SHIFT — sprint</div>
         <div>SPACE (falling) — glide with paraglider</div>
-        <div>TAB — switch view</div>
+        <div>TAB — switch view (3rd person shows character)</div>
       </div>
     </>
   )
