@@ -14,8 +14,11 @@ export type PlayerSnapshot = {
   cold: number
   isSprinting: boolean
   isMoving: boolean
+  isGliding: boolean
   hitFlash: number
   screenShake: number
+  weaponDurability: number
+  maxWeaponDurability: number
 }
 
 export type MoveState = {
@@ -42,6 +45,11 @@ type PlayerStore = {
   triggerHitFlash: () => void
   triggerScreenShake: (amount: number) => void
   tickSurvival: (hungerRate: number, coldRate: number) => void
+  useWeaponDurability: (n: number) => boolean
+  repairWeapon: () => void
+  addHeartContainer: () => void
+  consumeFood: (n: number) => boolean
+  setGliding: (v: boolean) => void
 }
 
 const PlayerContext = createContext<PlayerStore | null>(null)
@@ -67,8 +75,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     cold: 0,
     isSprinting: false,
     isMoving: false,
+    isGliding: false,
     hitFlash: 0,
     screenShake: 0,
+    weaponDurability: 100,
+    maxWeaponDurability: 100,
   })
 
   const setPosition = useCallback((x: number, y: number, z: number) => {
@@ -126,8 +137,39 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const tickSurvival = useCallback((hungerRate: number, coldRate: number) => {
     snapRef.current.hunger = Math.min(100, snapRef.current.hunger + hungerRate)
     snapRef.current.cold = Math.min(100, snapRef.current.cold + coldRate)
+    if (snapRef.current.hunger >= 100) {
+      snapRef.current.health = Math.max(0, snapRef.current.health - 0.02)
+    }
+    if (snapRef.current.cold >= 100) {
+      snapRef.current.health = Math.max(0, snapRef.current.health - 0.03)
+    }
     if (snapRef.current.hitFlash > 0) snapRef.current.hitFlash -= 0.05
     if (snapRef.current.screenShake > 0) snapRef.current.screenShake *= 0.85
+  }, [])
+
+  const useWeaponDurability = useCallback((n: number) => {
+    if (snapRef.current.weaponDurability < n) return false
+    snapRef.current.weaponDurability -= n
+    return true
+  }, [])
+
+  const repairWeapon = useCallback(() => {
+    snapRef.current.weaponDurability = snapRef.current.maxWeaponDurability
+  }, [])
+
+  const addHeartContainer = useCallback(() => {
+    snapRef.current.maxHealth += 1
+    snapRef.current.health = snapRef.current.maxHealth
+  }, [])
+
+  const consumeFood = useCallback((n: number) => {
+    if (snapRef.current.food < n) return false
+    snapRef.current.food -= n
+    return true
+  }, [])
+
+  const setGliding = useCallback((v: boolean) => {
+    snapRef.current.isGliding = v
   }, [])
 
   const store: PlayerStore = {
@@ -147,6 +189,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     triggerHitFlash,
     triggerScreenShake,
     tickSurvival,
+    useWeaponDurability,
+    repairWeapon,
+    addHeartContainer,
+    consumeFood,
+    setGliding,
   }
 
   return <PlayerContext.Provider value={store}>{children}</PlayerContext.Provider>

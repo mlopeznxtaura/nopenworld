@@ -6,7 +6,11 @@ import { getTerrainHeight } from '../utils/noise'
 import { usePlayerStore } from '../game/playerState'
 import { useCharacter } from '../game/characterState'
 import { playClangSound } from '../audio/spatial'
+import { useProgressStore } from '../game/progressState'
 import { attackSwingRef } from './PlayerAvatar'
+
+const GLIDE_FALL_SPEED = 3.5
+const GLIDE_STAMINA_DRAIN = 8
 
 /** Tuned to match Soldier.glb walk cycle foot speed */
 const WALK_SPEED = 4.6
@@ -51,10 +55,13 @@ export function Player() {
     regenStamina,
     setSprinting,
     setMoving,
+    setGliding,
     triggerScreenShake,
     snapRef,
     tickSurvival,
+    useWeaponDurability,
   } = usePlayerStore()
+  const { snapRef: progressRef } = useProgressStore()
 
   const velocityY = useRef(0)
   const horizontalVel = useRef(new THREE.Vector3())
@@ -129,12 +136,28 @@ export function Player() {
 
     velocityY.current -= GRAVITY * dt
 
+    const groundHeight = getTerrainHeight(positionRef.current.x, positionRef.current.z)
+    const targetY = groundHeight + PLAYER_HEIGHT
+    const airborne = positionRef.current.y > targetY + 0.15
+    const canGlide =
+      progressRef.current.paragliderUnlocked &&
+      airborne &&
+      velocityY.current < -1 &&
+      jump
+
+    if (canGlide) {
+      setGliding(true)
+      velocityY.current = Math.max(velocityY.current, -GLIDE_FALL_SPEED)
+      if (!useStamina(GLIDE_STAMINA_DRAIN * dt)) {
+        setGliding(false)
+      }
+    } else {
+      setGliding(false)
+    }
+
     positionRef.current.x += horizontalVel.current.x * dt
     positionRef.current.z += horizontalVel.current.z * dt
     positionRef.current.y += velocityY.current * dt
-
-    const groundHeight = getTerrainHeight(positionRef.current.x, positionRef.current.z)
-    const targetY = groundHeight + PLAYER_HEIGHT
 
     if (positionRef.current.y < targetY) {
       positionRef.current.y = targetY
@@ -153,21 +176,26 @@ export function Player() {
     if (attackCooldown.current > 0) attackCooldown.current -= dt
 
     if (attack && attackCooldown.current <= 0 && useStamina(18)) {
-      attackCooldown.current = 0.45
-      attackSwingRef.current = 0.25
-      triggerScreenShake(0.06)
+      if (snapRef.current.weaponDurability <= 0) {
+        attackCooldown.current = 0.3
+      } else {
+        useWeaponDurability(8)
+        attackCooldown.current = 0.45
+        attackSwingRef.current = 0.25
+        triggerScreenShake(0.06)
 
-      const forwardVec = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation)
-      forwardVec.y = 0
-      forwardVec.normalize()
-      const hitPoint = positionRef.current.clone().add(forwardVec.multiplyScalar(2.2))
+        const forwardVec = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation)
+        forwardVec.y = 0
+        forwardVec.normalize()
+        const hitPoint = positionRef.current.clone().add(forwardVec.multiplyScalar(2.2))
 
-      for (const t of meleeTargets) {
-        if (hitPoint.distanceTo(t.position) < t.radius + 2) {
-          t.onHit()
-          playClangSound()
-          triggerScreenShake(0.12)
-          break
+        for (const t of meleeTargets) {
+          if (hitPoint.distanceTo(t.position) < t.radius + 2) {
+            t.onHit()
+            playClangSound()
+            triggerScreenShake(0.12)
+            break
+          }
         }
       }
     }

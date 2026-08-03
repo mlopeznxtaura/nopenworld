@@ -41,17 +41,7 @@ export function HazardZone() {
         />
       </mesh>
 
-      {/* Glowing loot crate placeholder */}
-      <mesh position={[2, 0.5, -3]}>
-        <boxGeometry args={[1, 0.8, 0.8]} />
-        <meshStandardMaterial
-          color="#4a6080"
-          emissive="#6a90c0"
-          emissiveIntensity={1.5}
-          roughness={0.7}
-        />
-      </mesh>
-      <pointLight position={[2, 1, -3]} color="#8ab0e0" intensity={5} distance={8} decay={2} />
+      {/* Loot crate removed — use Chest in WorldContent */}
     </group>
   )
 }
