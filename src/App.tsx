@@ -1,7 +1,13 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { PointerLockControls } from '@react-three/drei'
-import { EffectComposer, Bloom, Vignette, BrightnessContrast } from '@react-three/postprocessing'
+import {
+  EffectComposer,
+  Bloom,
+  Vignette,
+  BrightnessContrast,
+  SMAA,
+} from '@react-three/postprocessing'
 import * as THREE from 'three'
 import { SceneEnvironment } from './components/Environment'
 import { Player } from './components/Player'
@@ -16,7 +22,6 @@ import { ProgressProvider } from './game/progressState'
 import { SurvivalHUD } from './ui/SurvivalHUD'
 import { ShrineLessonHUD } from './ui/ShrineLessonHUD'
 import { CharacterCustomization } from './ui/CharacterCustomization'
-import { useState } from 'react'
 
 type AppPhase = 'customize' | 'playing'
 
@@ -47,14 +52,17 @@ function GameScene({ phase }: { phase: AppPhase }) {
   return (
     <Canvas
       shadows
-      dpr={[1, 1.75]}
+      // Cap pixel ratio — character stays sharp without 4K fill-rate death
+      dpr={[1, 1.5]}
       gl={{
-        antialias: true,
+        antialias: false, // SMAA handles edges cheaper than MSAA+composer
         powerPreference: 'high-performance',
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.12,
+        toneMappingExposure: 1.15,
+        stencil: false,
       }}
-      camera={{ fov: 72, near: 0.1, far: 1000 }}
+      camera={{ fov: 70, near: 0.15, far: 420 }}
+      performance={{ min: 0.6 }}
     >
       <TimeProvider>
         {playing && <PointerLockControls />}
@@ -67,15 +75,16 @@ function GameScene({ phase }: { phase: AppPhase }) {
             <WorldContent />
           </>
         )}
-        <EffectComposer multisampling={4}>
+        <EffectComposer multisampling={0} enableNormalPass={false}>
+          <SMAA />
           <Bloom
-            luminanceThreshold={0.72}
-            luminanceSmoothing={0.85}
+            luminanceThreshold={0.78}
+            luminanceSmoothing={0.82}
             mipmapBlur
-            intensity={1.35}
+            intensity={1.15}
           />
-          <BrightnessContrast brightness={0.03} contrast={0.14} />
-          <Vignette offset={0.22} darkness={0.65} />
+          <BrightnessContrast brightness={0.02} contrast={0.12} />
+          <Vignette offset={0.25} darkness={0.55} />
         </EffectComposer>
       </TimeProvider>
     </Canvas>

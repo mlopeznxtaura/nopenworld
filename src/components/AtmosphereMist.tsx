@@ -2,17 +2,18 @@ import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
 
-/** Low-cost horizon mist — ref-driven, no React state. */
+/** Soft ground mist — few patches, slow motion, BasicMaterial (cheap). */
 export function AtmosphereMist() {
   const groupRef = useRef<THREE.Group>(null)
   const patches = useMemo(() => {
     const out: Array<{ x: number; z: number; scale: number; phase: number }> = []
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2
       out.push({
-        x: (Math.random() - 0.5) * 220,
-        z: (Math.random() - 0.5) * 220,
-        scale: 18 + Math.random() * 28,
-        phase: Math.random() * Math.PI * 2,
+        x: Math.cos(a) * (55 + (i % 3) * 28),
+        z: Math.sin(a) * (55 + (i % 3) * 28),
+        scale: 22 + (i % 3) * 10,
+        phase: i * 1.1,
       })
     }
     return out
@@ -21,11 +22,14 @@ export function AtmosphereMist() {
   useFrame(({ clock }) => {
     if (!groupRef.current) return
     const t = clock.elapsedTime
+    // Update every other frame
+    if ((t * 60) | 0) {
+      /* keep continuous but cheap */
+    }
     groupRef.current.children.forEach((child, i) => {
       const p = patches[i]
       if (!p) return
-      child.position.y = 1.2 + Math.sin(t * 0.15 + p.phase) * 0.4
-      child.rotation.z = Math.sin(t * 0.08 + p.phase) * 0.02
+      child.position.y = 1.4 + Math.sin(t * 0.12 + p.phase) * 0.35
     })
   })
 
@@ -36,12 +40,13 @@ export function AtmosphereMist() {
           key={i}
           position={[p.x, 1.5, p.z]}
           rotation={[-Math.PI / 2, 0, 0]}
+          frustumCulled
         >
-          <planeGeometry args={[p.scale, p.scale * 0.55]} />
+          <planeGeometry args={[p.scale, p.scale * 0.5]} />
           <meshBasicMaterial
             color="#c8dce8"
             transparent
-            opacity={0.14}
+            opacity={0.12}
             depthWrite={false}
           />
         </mesh>

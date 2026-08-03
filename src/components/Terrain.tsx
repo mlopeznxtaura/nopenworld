@@ -21,7 +21,7 @@ export const Terrain = () => {
   const meshRef = useRef<THREE.Mesh>(null)
 
   const geometry = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(500, 500, 140, 140)
+    const geo = new THREE.PlaneGeometry(500, 500, 128, 128)
     geo.rotateX(-Math.PI / 2)
 
     const positions = geo.attributes.position.array as Float32Array

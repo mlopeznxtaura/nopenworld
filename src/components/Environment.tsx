@@ -133,6 +133,7 @@ export const SceneEnvironment = () => {
   const goldenHourRef = useRef(0)
   const turbidityRef = useRef(3)
   const rayleighRef = useRef(0.35)
+  const shadowFrame = useRef(0)
   const { scene } = useThree()
   const { positionRef, snapRef } = usePlayerStore()
 
@@ -166,33 +167,33 @@ export const SceneEnvironment = () => {
     }
 
     const ambientMult = 1 - exposureCrush * 0.55
-    const fogNear = 28 - exposureCrush * 10
-    const fogFar = 185 - exposureCrush * 65
+    const fogNear = 32 - exposureCrush * 10
+    const fogFar = 200 - exposureCrush * 70
 
     if (sunRef.current) {
       sunRef.current.position.copy(sunPos)
-      sunRef.current.intensity = lighting.sunIntensity * ambientMult
+      sunRef.current.intensity = lighting.sunIntensity * ambientMult * 1.05
       sunRef.current.color.copy(lighting.sunColor)
 
-      const cam = sunRef.current.shadow.camera as THREE.OrthographicCamera
-      cam.position.set(px, sunPos.y * 0.5 + 40, pz)
-      cam.lookAt(px, 0, pz)
-      cam.left = -55
-      cam.right = 55
-      cam.top = 55
-      cam.bottom = -55
-      cam.updateProjectionMatrix()
+      // Follow player less often — shadows stay sharp near you without every-frame matrix thrash
+      shadowFrame.current += 1
+      if (shadowFrame.current % 4 === 0) {
+        const cam = sunRef.current.shadow.camera as THREE.OrthographicCamera
+        cam.position.set(px + sunPos.x * 0.02, Math.max(35, sunPos.y * 0.45), pz + sunPos.z * 0.02)
+        cam.lookAt(px, 0, pz)
+        cam.updateProjectionMatrix()
+        sunRef.current.target.position.set(px, 0, pz)
+        sunRef.current.target.updateMatrixWorld()
+      }
     }
 
     if (ambientRef.current) {
-      ambientRef.current.intensity = lighting.ambientIntensity * ambientMult * 0.65
+      ambientRef.current.intensity = lighting.ambientIntensity * ambientMult * 0.6
       ambientRef.current.color.copy(lighting.ambientColor)
     }
 
     if (hemiRef.current) {
-      hemiRef.current.intensity = 0.35 * ambientMult + lighting.goldenHour * 0.2
-      hemiRef.current.color.set('#88b8e8')
-      hemiRef.current.groundColor.set('#3a5a38')
+      hemiRef.current.intensity = 0.4 * ambientMult + lighting.goldenHour * 0.22
     }
 
     if (scene.fog) {
@@ -206,10 +207,10 @@ export const SceneEnvironment = () => {
   return (
     <>
       <color attach="background" args={['#a8c8e8']} />
-      <ambientLight ref={ambientRef} intensity={0.35} color="#c8d4e0" />
+      <ambientLight ref={ambientRef} intensity={0.32} color="#c8d4e0" />
       <hemisphereLight
         ref={hemiRef}
-        intensity={0.45}
+        intensity={0.5}
         color="#9ec8e8"
         groundColor="#3d5c40"
       />
@@ -217,18 +218,18 @@ export const SceneEnvironment = () => {
         ref={sunRef}
         castShadow
         position={[100, 200, 50]}
-        intensity={1.25}
+        intensity={1.3}
         color="#fff4d0"
-        shadow-mapSize-width={1536}
-        shadow-mapSize-height={1536}
-        shadow-camera-near={0.5}
-        shadow-camera-far={280}
-        shadow-camera-left={-55}
-        shadow-camera-right={55}
-        shadow-camera-top={55}
-        shadow-camera-bottom={-55}
-        shadow-bias={-0.00015}
-        shadow-normalBias={0.02}
+        shadow-mapSize-width={1280}
+        shadow-mapSize-height={1280}
+        shadow-camera-near={1}
+        shadow-camera-far={220}
+        shadow-camera-left={-48}
+        shadow-camera-right={48}
+        shadow-camera-top={48}
+        shadow-camera-bottom={-48}
+        shadow-bias={-0.0002}
+        shadow-normalBias={0.025}
       />
       <StylizedSun positionRef={sunPosRef} goldenHourRef={goldenHourRef} />
       <ManagedSky
@@ -237,7 +238,7 @@ export const SceneEnvironment = () => {
         rayleighRef={rayleighRef}
       />
       <AtmosphereMist />
-      <fog attach="fog" args={['#a8c8e8', 28, 185]} />
+      <fog attach="fog" args={['#a8c8e8', 32, 200]} />
     </>
   )
 }
