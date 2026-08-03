@@ -63,7 +63,7 @@ export function CharacterCustomization({ onStart }: CharacterCustomizationProps)
   return (
     <div className="absolute inset-0 z-50 flex bg-[#0a0a0a] text-white">
       <div className="flex-1 relative min-w-0">
-        <Canvas shadows camera={{ position: [0, 1.45, 3.8], fov: 42 }}>
+        <Canvas shadows camera={{ position: [0, 1.1, 3.6], fov: 40 }}>
           <CharacterPreviewScene />
         </Canvas>
         <div className="absolute bottom-6 left-6 text-white/40 text-sm font-mono pointer-events-none">

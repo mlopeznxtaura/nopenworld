@@ -34,11 +34,13 @@ export function PlayerAvatar() {
 
   return (
     <group ref={groupRef}>
-      <CharacterModel
-        config={config}
-        attackSwingRef={attackSwingRef}
-        showWeapon
-      />
+      <group position={[0, -0.92, 0]}>
+        <CharacterModel
+          config={config}
+          attackSwingRef={attackSwingRef}
+          showWeapon
+        />
+      </group>
     </group>
   )
 }
