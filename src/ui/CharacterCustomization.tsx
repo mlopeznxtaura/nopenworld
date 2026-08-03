@@ -1,9 +1,11 @@
 import { Canvas } from '@react-three/fiber'
 import { CharacterPreviewScene } from '../components/CharacterPreviewScene'
 import {
-  BODY_PRESETS,
-  HOOD_PRESETS,
-  LANTERN_PRESETS,
+  SKIN_PRESETS,
+  HAIR_PRESETS,
+  TUNIC_PRESETS,
+  TRIM_PRESETS,
+  GEM_PRESETS,
   type CharacterBuild,
 } from '../game/characterConfig'
 import { useCharacter } from '../game/characterState'
@@ -12,97 +14,98 @@ type CharacterCustomizationProps = {
   onStart: () => void
 }
 
+function PresetRow({
+  label,
+  presets,
+  value,
+  onPick,
+  glow,
+}: {
+  label: string
+  presets: Array<{ id: string; label: string; color: string }>
+  value: string
+  onPick: (color: string) => void
+  glow?: boolean
+}) {
+  return (
+    <section className="mb-6">
+      <h2 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3">{label}</h2>
+      <div className="flex flex-wrap gap-2">
+        {presets.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => onPick(p.color)}
+            className={`px-3 py-2 rounded-lg text-sm border transition-all ${
+              value === p.color
+                ? 'border-emerald-400 bg-white/10'
+                : 'border-white/15 bg-white/5 hover:bg-white/10'
+            }`}
+          >
+            <span
+              className="inline-block w-3 h-3 rounded-full mr-2 align-middle border border-white/15"
+              style={{
+                background: p.color,
+                boxShadow: glow ? `0 0 8px ${p.color}` : undefined,
+              }}
+            />
+            {p.label}
+          </button>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export function CharacterCustomization({ onStart }: CharacterCustomizationProps) {
   const { config, setConfig } = useCharacter()
 
   return (
     <div className="absolute inset-0 z-50 flex bg-[#0a0a0a] text-white">
-      {/* 3D preview */}
       <div className="flex-1 relative min-w-0">
-        <Canvas shadows camera={{ position: [0, 1.4, 4.2], fov: 45 }}>
+        <Canvas shadows camera={{ position: [0, 1.45, 3.8], fov: 42 }}>
           <CharacterPreviewScene />
         </Canvas>
         <div className="absolute bottom-6 left-6 text-white/40 text-sm font-mono pointer-events-none">
-          Drag to rotate preview
+          Drag to inspect your adventurer
         </div>
       </div>
 
-      {/* Customization panel */}
       <div className="w-full max-w-md flex flex-col border-l border-white/10 bg-black/70 backdrop-blur-md p-8 overflow-y-auto">
         <h1 className="text-3xl font-bold tracking-widest text-emerald-400 mb-1">WILD BREATH</h1>
-        <p className="text-emerald-100/60 text-sm mb-8">Shape your survivor</p>
+        <p className="text-emerald-100/60 text-sm mb-6">Forge your adventurer</p>
 
-        <section className="mb-6">
-          <h2 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3">Hood glow</h2>
-          <div className="flex flex-wrap gap-2">
-            {HOOD_PRESETS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setConfig({ hoodColor: p.color })}
-                className={`px-3 py-2 rounded-lg text-sm border transition-all ${
-                  config.hoodColor === p.color
-                    ? 'border-emerald-400 bg-white/10'
-                    : 'border-white/15 bg-white/5 hover:bg-white/10'
-                }`}
-              >
-                <span
-                  className="inline-block w-3 h-3 rounded-full mr-2 align-middle"
-                  style={{ background: p.color, boxShadow: `0 0 8px ${p.color}` }}
-                />
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="mb-6">
-          <h2 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3">Body</h2>
-          <div className="flex flex-wrap gap-2">
-            {BODY_PRESETS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setConfig({ bodyColor: p.color })}
-                className={`px-3 py-2 rounded-lg text-sm border transition-all ${
-                  config.bodyColor === p.color
-                    ? 'border-emerald-400 bg-white/10'
-                    : 'border-white/15 bg-white/5 hover:bg-white/10'
-                }`}
-              >
-                <span
-                  className="inline-block w-3 h-3 rounded-full mr-2 align-middle border border-white/20"
-                  style={{ background: p.color }}
-                />
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="mb-6">
-          <h2 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3">Lantern</h2>
-          <div className="flex flex-wrap gap-2">
-            {LANTERN_PRESETS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setConfig({ lanternColor: p.color })}
-                className={`px-3 py-2 rounded-lg text-sm border transition-all ${
-                  config.lanternColor === p.color
-                    ? 'border-emerald-400 bg-white/10'
-                    : 'border-white/15 bg-white/5 hover:bg-white/10'
-                }`}
-              >
-                <span
-                  className="inline-block w-3 h-3 rounded-full mr-2 align-middle"
-                  style={{ background: p.color, boxShadow: `0 0 6px ${p.color}` }}
-                />
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </section>
+        <PresetRow
+          label="Skin tone"
+          presets={SKIN_PRESETS}
+          value={config.skinTone}
+          onPick={(c) => setConfig({ skinTone: c })}
+        />
+        <PresetRow
+          label="Hair"
+          presets={HAIR_PRESETS}
+          value={config.hairColor}
+          onPick={(c) => setConfig({ hairColor: c })}
+        />
+        <PresetRow
+          label="Tabard"
+          presets={TUNIC_PRESETS}
+          value={config.tunicColor}
+          onPick={(c) => setConfig({ tunicColor: c })}
+        />
+        <PresetRow
+          label="Trim"
+          presets={TRIM_PRESETS}
+          value={config.trimColor}
+          onPick={(c) => setConfig({ trimColor: c })}
+        />
+        <PresetRow
+          label="Arcane glow"
+          presets={GEM_PRESETS}
+          value={config.gemColor}
+          onPick={(c) => setConfig({ gemColor: c })}
+          glow
+        />
 
         <section className="mb-6">
           <h2 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3">
@@ -110,8 +113,8 @@ export function CharacterCustomization({ onStart }: CharacterCustomizationProps)
           </h2>
           <input
             type="range"
-            min={0.85}
-            max={1.15}
+            min={0.9}
+            max={1.1}
             step={0.05}
             value={config.scale}
             onChange={(e) => setConfig({ scale: parseFloat(e.target.value) })}

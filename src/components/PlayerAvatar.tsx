@@ -37,7 +37,7 @@ export function PlayerAvatar() {
       <CharacterModel
         config={config}
         attackSwingRef={attackSwingRef}
-        showAxe
+        showWeapon
       />
     </group>
   )
