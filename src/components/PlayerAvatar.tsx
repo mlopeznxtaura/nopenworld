@@ -9,8 +9,11 @@ export const attackSwingRef = { current: 0 }
 
 /** Eye height — matches Player.tsx PLAYER_HEIGHT */
 const PLAYER_HEIGHT = 1.75
-/** Soldier.glb feet sit slightly below local origin; lift to plant on terrain */
-const MODEL_FOOT_OFFSET = 0.02
+/**
+ * Soldier.glb root sits at hips; preview uses -0.95 to plant feet on floor.
+ * In-world we lift the mesh so feet align with the physics foot anchor.
+ */
+const MODEL_LIFT = 0.95
 
 function lerpAngle(a: number, b: number, t: number) {
   let diff = b - a
@@ -36,9 +39,10 @@ export function PlayerAvatar() {
     const targetFacing = move.isMoving ? move.moveYaw : camera.rotation.y
     facing.current = lerpAngle(facing.current, targetFacing, Math.min(1, 14 * delta))
 
+    const footY = positionRef.current.y - PLAYER_HEIGHT
     groupRef.current.position.set(
       positionRef.current.x,
-      positionRef.current.y - PLAYER_HEIGHT + MODEL_FOOT_OFFSET,
+      footY,
       positionRef.current.z,
     )
     groupRef.current.rotation.y = facing.current + Math.PI
@@ -49,7 +53,7 @@ export function PlayerAvatar() {
     if (move.isMoving) bobPhase.current += delta * (move.isSprinting ? 14 : 10)
     else bobPhase.current = 0
 
-    bodyRef.current.position.y = bob
+    bodyRef.current.position.y = MODEL_LIFT + bob
 
     bodyRef.current.visible = viewModeRef.current === 'third'
 
