@@ -82,7 +82,11 @@ function ConfigSummary({ config }: { config: CharacterConfig }) {
       <div>Tabard <span className="text-emerald-300/80">{config.tunicColor}</span></div>
       <div>Trim <span className="text-amber-300/80">{config.trimColor}</span></div>
       <div>Glow <span className="text-cyan-300/80">{config.gemColor}</span></div>
-      <div>Build <span className="text-white/70">{config.build}</span> · Scale {config.scale.toFixed(2)}×</div>
+      <div>
+        Build <span className="text-white/70">{config.build}</span>
+        {' · '}
+        Scale <span className="text-white/70">{config.scale.toFixed(2)}×</span>
+      </div>
     </div>
   )
 }
@@ -145,13 +149,13 @@ export function CharacterCustomization({ onStart }: CharacterCustomizationProps)
 
         <section className="mb-6">
           <h2 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3">
-            Height — {config.scale.toFixed(2)}×
+            HEIGHT — {config.scale.toFixed(2)}×
           </h2>
           <input
             type="range"
-            min={0.9}
-            max={1.1}
-            step={0.05}
+            min={0.8}
+            max={1.2}
+            step={0.01}
             value={config.scale}
             onChange={(e) => setConfig({ scale: parseFloat(e.target.value) })}
             className="w-full accent-emerald-500"

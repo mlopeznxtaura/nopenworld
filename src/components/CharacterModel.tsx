@@ -52,7 +52,9 @@ export function CharacterModel({
   const { moveStateRef } = usePlayerStore()
   const { viewModeRef } = useCharacter()
 
-  const broad = config.build === 'broad' ? 1.08 : 1
+  const BASE = 0.95
+  const xz = config.build === 'broad' ? 1.1 : 0.9
+  const s = config.scale * BASE
 
   useEffect(() => {
     tintHumanBase(clone, config)
@@ -217,7 +219,7 @@ export function CharacterModel({
   })
 
   return (
-    <group ref={groupRef} scale={config.scale * broad * 0.95}>
+    <group ref={groupRef} scale={[s * xz, s, s * xz]}>
       <primitive object={clone} />
     </group>
   )
