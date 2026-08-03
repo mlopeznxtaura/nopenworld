@@ -8,7 +8,7 @@ import { FoodNodes } from './FoodNode'
 import { Fauna } from './Fauna'
 import { HazardZone, BackgroundHills } from './HazardZone'
 import { PlayerAvatar } from './PlayerAvatar'
-import { Shrines } from './Shrine'
+import { Shrines, ShrineBeacons } from './Shrine'
 import { KorokSeeds } from './KorokSeed'
 import { EnemyCamps } from './EnemyCamp'
 import { CookingPot } from './CookingPot'
@@ -27,6 +27,7 @@ export function WorldContent() {
       <CookingPot />
       <QuestGiver />
       <CabinQuestGiver />
+      <ShrineBeacons />
       <Shrines />
       <KorokSeeds />
       <EnemyCamps />

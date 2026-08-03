@@ -3,6 +3,7 @@ import { usePlayerStore } from '../game/playerState'
 import { useCharacter } from '../game/characterState'
 import { useProgressStore, useQuestList } from '../game/progressState'
 import { liveTimeSnapshot } from '../game/timeState'
+import { SHRINE_TOTAL } from '../game/shrineCatalog'
 
 export function SurvivalHUD() {
   const { snapRef } = usePlayerStore()
@@ -137,7 +138,7 @@ export function SurvivalHUD() {
         <div className="bg-black/40 px-3 py-2 rounded border border-cyan-500/30 space-y-1 text-xs">
           <div>ORBS <span className="text-cyan-300">{ui.spiritOrbs}</span></div>
           <div>SEEDS <span className="text-lime-300">{ui.korokSeeds}</span></div>
-          <div>SHRINES <span className="text-sky-300">{ui.shrinesCompleted}/3</span></div>
+          <div>SHRINES <span className="text-sky-300">{ui.shrinesCompleted}/{SHRINE_TOTAL}</span></div>
           <div>MAP <span className="text-blue-300">{ui.mapRegions}/3 regions</span></div>
           {ui.paraglider && <div className="text-cyan-200">PARAGLIDER READY</div>}
           {ui.isGliding && <div className="text-cyan-400 animate-pulse">GLIDING</div>}

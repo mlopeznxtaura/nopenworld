@@ -13,6 +13,7 @@ import { WorldProvider } from './game/worldState'
 import { CharacterProvider } from './game/characterState'
 import { ProgressProvider } from './game/progressState'
 import { SurvivalHUD } from './ui/SurvivalHUD'
+import { ShrineLessonHUD } from './ui/ShrineLessonHUD'
 import { CharacterCustomization } from './ui/CharacterCustomization'
 import { useState } from 'react'
 
@@ -86,6 +87,7 @@ export default function App() {
               {phase === 'playing' && (
                 <>
                   <SurvivalHUD />
+                  <ShrineLessonHUD />
                   <div className="absolute top-4 left-0 right-0 text-center z-30 pointer-events-none">
                     <h1 className="text-white/20 text-xl font-bold tracking-[0.5em]">WILD BREATH</h1>
                   </div>

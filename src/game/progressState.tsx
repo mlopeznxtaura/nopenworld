@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from 'react'
 import { getQuest, QUESTS } from './quests'
+import { getShrineDef } from './shrineCatalog'
 
 export type Notification = {
   id: number
@@ -141,49 +142,70 @@ export function ProgressProvider({
       completedShrines.current.add(shrineId)
       snapRef.current.spiritOrbs += 1
       snapRef.current.shrinesCompleted = completedShrines.current.size
-      pushNotification('Spirit Orb obtained!', 'item')
+      const def = getShrineDef(shrineId)
+      pushNotification(def?.completeMessage ?? 'Spirit Orb obtained!', 'item')
       advanceQuest('first-shrine', 1)
     },
     [advanceQuest, pushNotification],
   )
 
+  const puzzleComplete = useCallback(
+    (shrineId: string, kind: 'torches' | 'targets' | 'plates', count: number) => {
+      const p = shrinePuzzles.current[shrineId] ?? {}
+      const arr =
+        kind === 'torches' ? p.torches : kind === 'targets' ? p.targets : p.plates
+      if (!arr || arr.length < count) return false
+      return arr.slice(0, count).every(Boolean)
+    },
+    [],
+  )
+
   const lightShrineTorch = useCallback(
     (shrineId: string, index: number) => {
-      const p = shrinePuzzles.current[shrineId] ?? { torches: [false, false, false] }
-      if (!p.torches) p.torches = [false, false, false]
+      const def = getShrineDef(shrineId)
+      const count = def?.puzzleCount ?? 3
+      const p = shrinePuzzles.current[shrineId] ?? {}
+      if (!p.torches) p.torches = Array(count).fill(false)
       if (p.torches[index]) return
       p.torches[index] = true
       shrinePuzzles.current[shrineId] = p
-      pushNotification('Torch lit', 'success')
-      if (p.torches.every(Boolean)) completeShrine(shrineId)
+      const hint = def?.stepHints?.[index]
+      pushNotification(hint ?? 'Torch lit', 'success')
+      if (puzzleComplete(shrineId, 'torches', count)) completeShrine(shrineId)
     },
-    [completeShrine, pushNotification],
+    [completeShrine, pushNotification, puzzleComplete],
   )
 
   const hitShrineTarget = useCallback(
     (shrineId: string, index: number) => {
-      const p = shrinePuzzles.current[shrineId] ?? { targets: [false, false, false] }
-      if (!p.targets) p.targets = [false, false, false]
+      const def = getShrineDef(shrineId)
+      const count = def?.puzzleCount ?? 3
+      const p = shrinePuzzles.current[shrineId] ?? {}
+      if (!p.targets) p.targets = Array(count).fill(false)
       if (p.targets[index]) return
       p.targets[index] = true
       shrinePuzzles.current[shrineId] = p
-      pushNotification('Target hit!', 'success')
-      if (p.targets.every(Boolean)) completeShrine(shrineId)
+      const hint = def?.stepHints?.[index]
+      pushNotification(hint ?? 'Target hit!', 'success')
+      if (puzzleComplete(shrineId, 'targets', count)) completeShrine(shrineId)
     },
-    [completeShrine, pushNotification],
+    [completeShrine, pushNotification, puzzleComplete],
   )
 
   const activateShrinePlate = useCallback(
     (shrineId: string, index: number) => {
-      const p = shrinePuzzles.current[shrineId] ?? { plates: [false, false, false] }
-      if (!p.plates) p.plates = [false, false, false]
+      const def = getShrineDef(shrineId)
+      const count = def?.puzzleCount ?? 3
+      const p = shrinePuzzles.current[shrineId] ?? {}
+      if (!p.plates) p.plates = Array(count).fill(false)
       if (p.plates[index]) return
       p.plates[index] = true
       shrinePuzzles.current[shrineId] = p
-      pushNotification('Stone plate activated', 'success')
-      if (p.plates.every(Boolean)) completeShrine(shrineId)
+      const hint = def?.stepHints?.[index]
+      pushNotification(hint ?? 'Stone plate activated', 'success')
+      if (puzzleComplete(shrineId, 'plates', count)) completeShrine(shrineId)
     },
-    [completeShrine, pushNotification],
+    [completeShrine, pushNotification, puzzleComplete],
   )
 
   const findKorok = useCallback(
