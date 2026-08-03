@@ -1,0 +1,11 @@
+name = "nopenworld"
+main = "app10-proxy.js"
+compatibility_date = "2024-09-23"
+
+[assets]
+directory = "../dist"
+binding = "ASSETS"
+
+[[routes]]
+pattern = "app10.nextaura.fit"
+custom_domain = true

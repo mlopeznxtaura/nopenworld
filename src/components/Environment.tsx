@@ -1,0 +1,200 @@
+import { Sky } from '@react-three/drei'
+import { useFrame, useThree } from '@react-three/fiber'
+import { useRef, useState } from 'react'
+import * as THREE from 'three'
+import { StylizedSun } from './StylizedSun'
+import {
+  DAY_CYCLE_SECONDS,
+  DAYLIGHT_SECONDS,
+  NIGHT_SECONDS,
+  SUN_DISTANCE,
+  orbitProgressFromElapsed,
+} from '../game/timeState'
+import { usePlayerStore } from '../game/playerState'
+import { getSanctuaryDistance } from './HillCabinHub'
+import { CAMPFIRE_RADIUS } from './Campfire'
+import { BEACON_RADIUS } from './Beacon'
+
+/** Sun orbits east → zenith → west; orbit p=0.25 sunrise, 0.5 noon, 0.75 sunset. */
+function sunPositionFromProgress(p: number): THREE.Vector3 {
+  const angle = p * Math.PI * 2 - Math.PI / 2
+  const x = Math.cos(angle) * SUN_DISTANCE
+  const y = Math.sin(angle) * SUN_DISTANCE
+  const z = Math.sin(angle * 0.35) * 70 + 30
+  return new THREE.Vector3(x, y, z)
+}
+
+function computeLighting(p: number, sunPos: THREE.Vector3) {
+  const elevation = sunPos.y / SUN_DISTANCE
+
+  const dayFactor = THREE.MathUtils.smoothstep(elevation, -0.1, 0.35)
+
+  const dawnWindow = THREE.MathUtils.smoothstep(elevation, -0.02, 0.22) *
+    (1 - THREE.MathUtils.smoothstep(elevation, 0.22, 0.55))
+  const duskWindow = THREE.MathUtils.smoothstep(elevation, 0.55, 0.22) *
+    (1 - THREE.MathUtils.smoothstep(elevation, 0.22, -0.02))
+
+  const goldenHour = Math.max(dawnWindow, duskWindow)
+
+  const NIGHT_AMBIENT = new THREE.Color('#1a2030')
+  const DAY_AMBIENT = new THREE.Color('#c8d4e0')
+  const DAWN_AMBIENT = new THREE.Color('#ffd700')
+
+  const NIGHT_SUN = new THREE.Color('#8a7a60')
+  const DAWN_SUN = new THREE.Color('#ffb830')
+  const DAY_SUN = new THREE.Color('#fff0c8')
+  const DUSK_SUN = new THREE.Color('#ff9020')
+
+  const NIGHT_FOG = new THREE.Color('#1a2438')
+  const DAY_FOG = new THREE.Color('#a8c8e8')
+  const GOLDEN_FOG = new THREE.Color('#ffd700')
+  const ORANGE_FOG = new THREE.Color('#ff8c00')
+
+  const ambientColor = new THREE.Color()
+  ambientColor.copy(NIGHT_AMBIENT).lerp(DAWN_AMBIENT, goldenHour * 0.85)
+  ambientColor.lerp(DAY_AMBIENT, dayFactor * (1 - goldenHour * 0.4))
+
+  const ambientIntensity = THREE.MathUtils.lerp(0.2, 0.45, dayFactor) +
+    goldenHour * 0.25
+
+  const sunColor = new THREE.Color()
+  sunColor.copy(NIGHT_SUN).lerp(DAWN_SUN, goldenHour)
+  sunColor.lerp(DAY_SUN, dayFactor * (1 - goldenHour * 0.3))
+  if (duskWindow > dawnWindow) {
+    sunColor.lerp(DUSK_SUN, duskWindow)
+  }
+
+  const sunIntensity = THREE.MathUtils.lerp(0.2, 1.15, dayFactor) +
+    goldenHour * 0.45
+
+  const fogColor = new THREE.Color()
+  fogColor.copy(NIGHT_FOG).lerp(GOLDEN_FOG, goldenHour * 0.7)
+  fogColor.lerp(ORANGE_FOG, goldenHour * 0.45)
+  fogColor.lerp(DAY_FOG, dayFactor * (1 - goldenHour * 0.5))
+
+  const turbidity = THREE.MathUtils.lerp(3.2, 6.5, goldenHour) +
+    THREE.MathUtils.lerp(2.5, 4.0, dayFactor) * (1 - goldenHour)
+  const rayleigh = THREE.MathUtils.lerp(0.15, 0.55, goldenHour) +
+    THREE.MathUtils.lerp(0.2, 0.4, dayFactor) * (1 - goldenHour)
+
+  return {
+    ambientColor,
+    ambientIntensity,
+    sunColor,
+    sunIntensity,
+    fogColor,
+    turbidity,
+    rayleigh,
+    goldenHour,
+    dayFactor,
+  }
+}
+
+export const SceneEnvironment = () => {
+  const sunRef = useRef<THREE.DirectionalLight>(null)
+  const ambientRef = useRef<THREE.AmbientLight>(null)
+  const sunPosRef = useRef(new THREE.Vector3(100, 20, 100))
+  const { scene } = useThree()
+  const { positionRef, snapRef } = usePlayerStore()
+
+  const [sunPosition, setSunPosition] = useState<[number, number, number]>([100, 20, 100])
+  const [skyParams, setSkyParams] = useState({ turbidity: 3, rayleigh: 0.35 })
+  const [goldenHour, setGoldenHour] = useState(0)
+  const [exposureDarkness, setExposureDarkness] = useState(0)
+  const frameRef = useRef(0)
+
+  useFrame(({ clock }) => {
+    const elapsed = clock.elapsedTime
+    const cycleElapsed = elapsed % DAY_CYCLE_SECONDS
+    const isDaylight = cycleElapsed < DAYLIGHT_SECONDS
+    const nightFactor = isDaylight
+      ? 0
+      : (cycleElapsed - DAYLIGHT_SECONDS) / NIGHT_SECONDS
+
+    const orbitP = orbitProgressFromElapsed(elapsed)
+    const sunPos = sunPositionFromProgress(orbitP)
+    sunPosRef.current.copy(sunPos)
+    const lighting = computeLighting(orbitP, sunPos)
+
+    const px = positionRef.current.x
+    const pz = positionRef.current.z
+    const sanctuaryDist = getSanctuaryDistance(px, pz)
+    const maxSanctuary = Math.max(CAMPFIRE_RADIUS, BEACON_RADIUS, 12)
+    const inSanctuary = sanctuaryDist < maxSanctuary
+    const exposureCrush = nightFactor > 0 && !inSanctuary
+      ? THREE.MathUtils.clamp(nightFactor * 1.2, 0, 1)
+      : 0
+
+    if (exposureCrush > 0) {
+      snapRef.current.cold = Math.min(100, snapRef.current.cold + 0.03)
+    }
+
+    const ambientMult = 1 - exposureCrush * 0.55
+    const fogNear = 20 - exposureCrush * 8
+    const fogFar = 150 - exposureCrush * 60
+
+    if (sunRef.current) {
+      sunRef.current.position.copy(sunPos)
+      sunRef.current.intensity = lighting.sunIntensity * ambientMult
+      sunRef.current.color.copy(lighting.sunColor)
+    }
+
+    if (ambientRef.current) {
+      ambientRef.current.intensity = lighting.ambientIntensity * ambientMult
+      ambientRef.current.color.copy(lighting.ambientColor)
+    }
+
+    if (scene.fog) {
+      const fog = scene.fog as THREE.Fog
+      fog.color.copy(lighting.fogColor)
+      fog.near = fogNear
+      fog.far = fogFar
+    }
+
+    frameRef.current += 1
+    if (frameRef.current % 2 === 0) {
+      setSunPosition([sunPos.x, sunPos.y, sunPos.z])
+      setSkyParams({ turbidity: lighting.turbidity, rayleigh: lighting.rayleigh })
+      setGoldenHour(lighting.goldenHour)
+      setExposureDarkness(exposureCrush)
+    }
+  })
+
+  return (
+    <>
+      <color attach="background" args={['#a8c8e8']} />
+      <ambientLight ref={ambientRef} intensity={0.45} color="#c8d4e0" />
+      <directionalLight
+        ref={sunRef}
+        castShadow
+        position={[100, 200, 50]}
+        intensity={1.1}
+        color="#fff4d0"
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-near={0.5}
+        shadow-camera-far={500}
+        shadow-camera-left={-100}
+        shadow-camera-right={100}
+        shadow-camera-top={100}
+        shadow-camera-bottom={-100}
+        shadow-bias={-0.0001}
+      />
+      <StylizedSun positionRef={sunPosRef} goldenHour={goldenHour} />
+      <Sky
+        sunPosition={sunPosition}
+        turbidity={skyParams.turbidity}
+        rayleigh={skyParams.rayleigh}
+        mieCoefficient={0.006}
+        mieDirectionalG={0.7}
+        distance={450000}
+      />
+      <fog attach="fog" args={['#a8c8e8', 20, 150]} />
+      {exposureDarkness > 0.1 && (
+        <mesh position={[0, 0, -1]}>
+          {/* Vignette boost handled in post; ambient crush is primary */}
+        </mesh>
+      )}
+    </>
+  )
+}
