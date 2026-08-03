@@ -1,8 +1,9 @@
 import { Sky } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import * as THREE from 'three'
 import { StylizedSun } from './StylizedSun'
+import { AtmosphereMist } from './AtmosphereMist'
 import {
   DAY_CYCLE_SECONDS,
   DAYLIGHT_SECONDS,
@@ -127,6 +128,7 @@ function ManagedSky({
 export const SceneEnvironment = () => {
   const sunRef = useRef<THREE.DirectionalLight>(null)
   const ambientRef = useRef<THREE.AmbientLight>(null)
+  const hemiRef = useRef<THREE.HemisphereLight>(null)
   const sunPosRef = useRef(new THREE.Vector3(100, 20, 100))
   const goldenHourRef = useRef(0)
   const turbidityRef = useRef(3)
@@ -164,18 +166,33 @@ export const SceneEnvironment = () => {
     }
 
     const ambientMult = 1 - exposureCrush * 0.55
-    const fogNear = 20 - exposureCrush * 8
-    const fogFar = 150 - exposureCrush * 60
+    const fogNear = 28 - exposureCrush * 10
+    const fogFar = 185 - exposureCrush * 65
 
     if (sunRef.current) {
       sunRef.current.position.copy(sunPos)
       sunRef.current.intensity = lighting.sunIntensity * ambientMult
       sunRef.current.color.copy(lighting.sunColor)
+
+      const cam = sunRef.current.shadow.camera as THREE.OrthographicCamera
+      cam.position.set(px, sunPos.y * 0.5 + 40, pz)
+      cam.lookAt(px, 0, pz)
+      cam.left = -55
+      cam.right = 55
+      cam.top = 55
+      cam.bottom = -55
+      cam.updateProjectionMatrix()
     }
 
     if (ambientRef.current) {
-      ambientRef.current.intensity = lighting.ambientIntensity * ambientMult
+      ambientRef.current.intensity = lighting.ambientIntensity * ambientMult * 0.65
       ambientRef.current.color.copy(lighting.ambientColor)
+    }
+
+    if (hemiRef.current) {
+      hemiRef.current.intensity = 0.35 * ambientMult + lighting.goldenHour * 0.2
+      hemiRef.current.color.set('#88b8e8')
+      hemiRef.current.groundColor.set('#3a5a38')
     }
 
     if (scene.fog) {
@@ -189,22 +206,29 @@ export const SceneEnvironment = () => {
   return (
     <>
       <color attach="background" args={['#a8c8e8']} />
-      <ambientLight ref={ambientRef} intensity={0.45} color="#c8d4e0" />
+      <ambientLight ref={ambientRef} intensity={0.35} color="#c8d4e0" />
+      <hemisphereLight
+        ref={hemiRef}
+        intensity={0.45}
+        color="#9ec8e8"
+        groundColor="#3d5c40"
+      />
       <directionalLight
         ref={sunRef}
         castShadow
         position={[100, 200, 50]}
-        intensity={1.1}
+        intensity={1.25}
         color="#fff4d0"
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
+        shadow-mapSize-width={1536}
+        shadow-mapSize-height={1536}
         shadow-camera-near={0.5}
-        shadow-camera-far={500}
-        shadow-camera-left={-100}
-        shadow-camera-right={100}
-        shadow-camera-top={100}
-        shadow-camera-bottom={-100}
-        shadow-bias={-0.0001}
+        shadow-camera-far={280}
+        shadow-camera-left={-55}
+        shadow-camera-right={55}
+        shadow-camera-top={55}
+        shadow-camera-bottom={-55}
+        shadow-bias={-0.00015}
+        shadow-normalBias={0.02}
       />
       <StylizedSun positionRef={sunPosRef} goldenHourRef={goldenHourRef} />
       <ManagedSky
@@ -212,7 +236,8 @@ export const SceneEnvironment = () => {
         turbidityRef={turbidityRef}
         rayleighRef={rayleighRef}
       />
-      <fog attach="fog" args={['#a8c8e8', 20, 150]} />
+      <AtmosphereMist />
+      <fog attach="fog" args={['#a8c8e8', 28, 185]} />
     </>
   )
 }

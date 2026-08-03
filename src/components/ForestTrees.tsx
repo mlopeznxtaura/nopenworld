@@ -49,10 +49,18 @@ export function ConiferTree({ scale = 1, variant = 0 }: ConiferTreeProps) {
         const radius = (3.4 - i * 0.48) * scale
         const height = 3.1 * scale
         const shade = i < 2 ? '#163d2a' : i < 4 ? '#245a3c' : '#2f6b4a'
+        const emissive = i >= layers - 2 ? '#1a5a38' : '#000000'
+        const emissiveIntensity = i >= layers - 2 ? 0.12 : 0
         return (
           <mesh key={i} position={[0, baseY, 0]} castShadow receiveShadow>
-            <coneGeometry args={[radius, height, 9]} />
-            <meshStandardMaterial color={shade} roughness={0.86} metalness={0.02} />
+            <coneGeometry args={[radius, height, 10]} />
+            <meshStandardMaterial
+              color={shade}
+              emissive={emissive}
+              emissiveIntensity={emissiveIntensity}
+              roughness={0.72}
+              metalness={0.04}
+            />
           </mesh>
         )
       })}
@@ -122,7 +130,7 @@ export function useForestLayout() {
       rotation: number
     }> = []
 
-    for (let i = 0; i < 55; i++) {
+    for (let i = 0; i < 72; i++) {
       const x = (Math.random() - 0.5) * 280
       const z = (Math.random() - 0.5) * 280
       if (Math.abs(x) < 18 && Math.abs(z) < 18) continue
@@ -137,7 +145,7 @@ export function useForestLayout() {
       })
     }
 
-    for (let i = 0; i < 70; i++) {
+    for (let i = 0; i < 88; i++) {
       const x = (Math.random() - 0.5) * 260
       const z = (Math.random() - 0.5) * 260
       if (Math.abs(x) < 12 && Math.abs(z) < 12) continue

@@ -1,7 +1,8 @@
 import { useCallback } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { PointerLockControls } from '@react-three/drei'
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
+import { EffectComposer, Bloom, Vignette, BrightnessContrast } from '@react-three/postprocessing'
+import * as THREE from 'three'
 import { SceneEnvironment } from './components/Environment'
 import { Player } from './components/Player'
 import { Terrain } from './components/Terrain'
@@ -44,7 +45,17 @@ function GameScene({ phase }: { phase: AppPhase }) {
   const playing = phase === 'playing'
 
   return (
-    <Canvas shadows camera={{ fov: 75, near: 0.1, far: 1000 }}>
+    <Canvas
+      shadows
+      dpr={[1, 1.75]}
+      gl={{
+        antialias: true,
+        powerPreference: 'high-performance',
+        toneMapping: THREE.ACESFilmicToneMapping,
+        toneMappingExposure: 1.12,
+      }}
+      camera={{ fov: 72, near: 0.1, far: 1000 }}
+    >
       <TimeProvider>
         {playing && <PointerLockControls />}
         <SceneEnvironment />
@@ -56,9 +67,15 @@ function GameScene({ phase }: { phase: AppPhase }) {
             <WorldContent />
           </>
         )}
-        <EffectComposer multisampling={0}>
-          <Bloom luminanceThreshold={0.85} mipmapBlur intensity={0.9} />
-          <Vignette offset={0.12} darkness={0.85} />
+        <EffectComposer multisampling={4}>
+          <Bloom
+            luminanceThreshold={0.72}
+            luminanceSmoothing={0.85}
+            mipmapBlur
+            intensity={1.35}
+          />
+          <BrightnessContrast brightness={0.03} contrast={0.14} />
+          <Vignette offset={0.22} darkness={0.65} />
         </EffectComposer>
       </TimeProvider>
     </Canvas>

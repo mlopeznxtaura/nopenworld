@@ -18,18 +18,20 @@ export function CharacterPreviewScene({ onReady }: CharacterPreviewSceneProps) {
 
   return (
     <>
-      <color attach="background" args={['#8ab4d0']} />
-      <fog attach="fog" args={['#c8dce8', 8, 28]} />
-      <ambientLight intensity={0.65} color="#f0f4ff" />
-      <directionalLight
-        position={[6, 12, 8]}
-        intensity={1.6}
-        color="#fff8e8"
-      />
-      <directionalLight position={[-4, 6, -2]} intensity={0.35} color="#88b8ff" />
+      <color attach="background" args={['#7eb4d8']} />
+      <fog attach="fog" args={['#b8d4ec', 10, 32]} />
+      <ambientLight intensity={0.55} color="#e8f0ff" />
+      <hemisphereLight intensity={0.65} color="#a8d8f0" groundColor="#4a6a48" />
+      <directionalLight position={[6, 12, 8]} intensity={1.8} color="#fff8e8" castShadow />
+      <directionalLight position={[-5, 4, -3]} intensity={0.45} color="#88b8ff" />
+      <pointLight position={[2, 2, 3]} intensity={12} color="#ffe8c8" distance={8} decay={2} />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.95, 0]} receiveShadow>
-        <circleGeometry args={[4, 48]} />
-        <meshStandardMaterial color="#5a7a52" roughness={0.92} />
+        <circleGeometry args={[4, 64]} />
+        <meshStandardMaterial color="#4a7a52" roughness={0.82} metalness={0.04} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.94, 0]}>
+        <circleGeometry args={[4.2, 64]} />
+        <meshBasicMaterial color="#88b8d8" transparent opacity={0.12} depthWrite={false} />
       </mesh>
       <group ref={rigRef}>
         <CharacterPreviewRig config={config} />

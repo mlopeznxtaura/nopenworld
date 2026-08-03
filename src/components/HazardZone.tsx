@@ -48,10 +48,14 @@ export function HazardZone() {
 
 export function BackgroundHills() {
   const hills = useRef([
-    { x: -200, z: -150, scale: 1.2 },
-    { x: 180, z: -180, scale: 1.5 },
-    { x: -160, z: 200, scale: 1.0 },
-    { x: 220, z: 120, scale: 1.3 },
+    { x: -200, z: -150, scale: 1.2, color: '#1a3048' },
+    { x: 180, z: -180, scale: 1.5, color: '#152838' },
+    { x: -160, z: 200, scale: 1.0, color: '#1e3540' },
+    { x: 220, z: 120, scale: 1.3, color: '#182c38' },
+    { x: -80, z: -220, scale: 0.9, color: '#243848' },
+    { x: 120, z: 200, scale: 1.1, color: '#1a3040' },
+    { x: -240, z: 60, scale: 1.4, color: '#141e2a' },
+    { x: 200, z: -80, scale: 1.0, color: '#1c2e3a' },
   ]).current
 
   return (
@@ -62,8 +66,13 @@ export function BackgroundHills() {
           position={[h.x, getTerrainHeight(h.x, h.z) + 15 * h.scale, h.z]}
           scale={[40 * h.scale, 30 * h.scale, 25 * h.scale]}
         >
-          <coneGeometry args={[1, 1, 6]} />
-          <meshStandardMaterial color="#1a2838" roughness={1} />
+          <coneGeometry args={[1, 1, 8]} />
+          <meshStandardMaterial
+            color={h.color}
+            roughness={1}
+            metalness={0}
+            flatShading
+          />
         </mesh>
       ))}
     </group>
