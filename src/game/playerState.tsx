@@ -13,14 +13,23 @@ export type PlayerSnapshot = {
   hunger: number
   cold: number
   isSprinting: boolean
+  isMoving: boolean
   hitFlash: number
   screenShake: number
+}
+
+export type MoveState = {
+  isMoving: boolean
+  isSprinting: boolean
+  moveYaw: number
+  speed: number
 }
 
 type PlayerStore = {
   snapRef: { current: PlayerSnapshot }
   snapshot: PlayerSnapshot
   positionRef: THREE.Vector3
+  moveStateRef: { current: MoveState }
   setPosition: (x: number, y: number, z: number) => void
   addWood: (n: number) => void
   addStone: (n: number) => void
@@ -29,6 +38,7 @@ type PlayerStore = {
   useStamina: (n: number) => boolean
   regenStamina: (n: number) => void
   setSprinting: (v: boolean) => void
+  setMoving: (v: boolean) => void
   triggerHitFlash: () => void
   triggerScreenShake: (amount: number) => void
   tickSurvival: (hungerRate: number, coldRate: number) => void
@@ -38,6 +48,12 @@ const PlayerContext = createContext<PlayerStore | null>(null)
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const positionRef = useRef(new THREE.Vector3(0, 10, 0))
+  const moveStateRef = useRef<MoveState>({
+    isMoving: false,
+    isSprinting: false,
+    moveYaw: 0,
+    speed: 0,
+  })
   const snapRef = useRef<PlayerSnapshot>({
     position: positionRef.current,
     health: 5,
@@ -50,6 +66,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     hunger: 0,
     cold: 0,
     isSprinting: false,
+    isMoving: false,
     hitFlash: 0,
     screenShake: 0,
   })
@@ -94,6 +111,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     snapRef.current.isSprinting = v
   }, [])
 
+  const setMoving = useCallback((v: boolean) => {
+    snapRef.current.isMoving = v
+  }, [])
+
   const triggerHitFlash = useCallback(() => {
     snapRef.current.hitFlash = 1
   }, [])
@@ -113,6 +134,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     snapRef,
     snapshot: snapRef.current,
     positionRef,
+    moveStateRef,
     setPosition,
     addWood,
     addStone,
@@ -121,6 +143,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     useStamina,
     regenStamina,
     setSprinting,
+    setMoving,
     triggerHitFlash,
     triggerScreenShake,
     tickSurvival,
