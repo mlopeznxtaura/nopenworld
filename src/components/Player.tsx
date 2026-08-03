@@ -60,6 +60,7 @@ export function Player() {
     snapRef,
     tickSurvival,
     useWeaponDurability,
+    resetVitals,
   } = usePlayerStore()
   const { snapRef: progressRef } = useProgressStore()
 
@@ -89,7 +90,16 @@ export function Player() {
       const ground = getTerrainHeight(SPAWN_X, SPAWN_Z)
       positionRef.current.set(SPAWN_X, ground + PLAYER_HEIGHT, SPAWN_Z)
       cameraGoal.current.copy(positionRef.current)
+      resetVitals()
       spawned.current = true
+    }
+
+    if (snapRef.current.health <= 0) {
+      const ground = getTerrainHeight(SPAWN_X, SPAWN_Z)
+      positionRef.current.set(SPAWN_X, ground + PLAYER_HEIGHT, SPAWN_Z)
+      velocityY.current = 0
+      horizontalVel.current.set(0, 0, 0)
+      resetVitals()
     }
 
     const { forward, backward, left, right, jump, sprint, attack } = controls

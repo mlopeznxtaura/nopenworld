@@ -71,7 +71,9 @@ export function SurvivalHUD() {
     return () => clearInterval(id)
   }, [snapRef, progressRef])
 
-  const hpPct = (ui.health / ui.maxHealth) * 100
+  const hearts = Math.max(0, Math.ceil(ui.health))
+  const maxHearts = Math.max(1, Math.round(ui.maxHealth))
+  const hpPct = Math.min(100, Math.max(0, (ui.health / maxHearts) * 100))
   const stPct = ui.stamina
   const hitOverlay = ui.hitFlash > 0.1
   const activeQuest = quests.find((q) => q.id === ui.activeQuestId)
@@ -109,7 +111,7 @@ export function SurvivalHUD() {
               style={{ width: `${hpPct}%` }}
             />
           </div>
-          <span className="text-xs text-white/50">{ui.health}/{ui.maxHealth}</span>
+          <span className="text-xs text-white/50">{hearts}/{maxHearts}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-yellow-300 w-16">STAMINA</span>

@@ -50,6 +50,7 @@ type PlayerStore = {
   addHeartContainer: () => void
   consumeFood: (n: number) => boolean
   setGliding: (v: boolean) => void
+  resetVitals: () => void
 }
 
 const PlayerContext = createContext<PlayerStore | null>(null)
@@ -100,9 +101,19 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const damage = useCallback((n: number) => {
+    if (snapRef.current.health <= 0) return
     snapRef.current.health = Math.max(0, snapRef.current.health - n)
     snapRef.current.hitFlash = 1
     snapRef.current.screenShake = 0.15
+  }, [])
+
+  const resetVitals = useCallback(() => {
+    snapRef.current.health = snapRef.current.maxHealth
+    snapRef.current.stamina = snapRef.current.maxStamina
+    snapRef.current.hunger = 0
+    snapRef.current.cold = 0
+    snapRef.current.hitFlash = 0
+    snapRef.current.screenShake = 0
   }, [])
 
   const useStamina = useCallback((n: number) => {
@@ -194,6 +205,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     addHeartContainer,
     consumeFood,
     setGliding,
+    resetVitals,
   }
 
   return <PlayerContext.Provider value={store}>{children}</PlayerContext.Provider>

@@ -39,6 +39,7 @@ export function StalkerWolf({ spawnX, spawnZ, id = 'stalker-0' }: StalkerWolfPro
   const [hitFlash, setHitFlash] = useState(0)
   const eyePulse = useRef(0)
   const lightRef = useRef<THREE.PointLight>(null)
+  const damageCooldown = useRef(0)
 
   const y = getTerrainHeight(spawnX, spawnZ)
   posRef.current.y = y
@@ -119,6 +120,8 @@ export function StalkerWolf({ spawnX, spawnZ, id = 'stalker-0' }: StalkerWolfPro
       return
     }
 
+    if (damageCooldown.current > 0) damageCooldown.current -= delta
+
     if (state === 'Sprint') {
       const dir = new THREE.Vector3()
         .subVectors(playerPos, posRef.current)
@@ -130,8 +133,9 @@ export function StalkerWolf({ spawnX, spawnZ, id = 'stalker-0' }: StalkerWolfPro
       posRef.current.z += dir.z * speed
       posRef.current.y = getTerrainHeight(posRef.current.x, posRef.current.z)
 
-      if (dist < 1.8) {
+      if (dist < 1.8 && damageCooldown.current <= 0) {
         damage(1)
+        damageCooldown.current = 1.1
         setState('Alert')
       }
 

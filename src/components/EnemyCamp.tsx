@@ -23,6 +23,7 @@ function Bokoblin({ id, offsetX, offsetZ, campX, campZ, onDeath }: BokoblinProps
   const posVec = useRef(new THREE.Vector3())
   const groupRef = useRef<THREE.Group>(null)
   const patrol = useRef(0)
+  const damageCooldown = useRef(0)
 
   useEffect(() => {
     if (dead) return
@@ -45,6 +46,7 @@ function Bokoblin({ id, offsetX, offsetZ, campX, campZ, onDeath }: BokoblinProps
 
   useFrame((_, delta) => {
     if (dead) return
+    if (damageCooldown.current > 0) damageCooldown.current -= delta
     patrol.current += delta
     const px = campX + offsetX + Math.sin(patrol.current * 0.8) * 2
     const pz = campZ + offsetZ + Math.cos(patrol.current * 0.6) * 2
@@ -62,7 +64,10 @@ function Bokoblin({ id, offsetX, offsetZ, campX, campZ, onDeath }: BokoblinProps
       }
     }
     const dist = Math.hypot(positionRef.current.x - px, positionRef.current.z - pz)
-    if (dist < 1.5) damage(1)
+    if (dist < 1.5 && damageCooldown.current <= 0) {
+      damage(1)
+      damageCooldown.current = 0.9
+    }
   })
 
   if (dead) return null
