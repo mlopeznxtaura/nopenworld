@@ -46,7 +46,7 @@ export function Campfire({ x = 0, z = 0 }: CampfireProps) {
         decay={2}
         castShadow
       />
-      {/* Static silhouettes around fire */}
+      {/* Static NPC silhouettes — distinct emissive tint vs player */}
       {[
         [1.8, 0, 0.5],
         [-1.5, 0, -0.8],
@@ -55,7 +55,12 @@ export function Campfire({ x = 0, z = 0 }: CampfireProps) {
         <group key={i} position={[p[0], 0, p[2]]}>
           <mesh position={[0, 0.85, 0]} castShadow>
             <capsuleGeometry args={[0.25, 0.7, 4, 6]} />
-            <meshStandardMaterial color="#080810" roughness={0.95} />
+            <meshStandardMaterial
+              color="#0a0a12"
+              emissive="#1a2838"
+              emissiveIntensity={0.12}
+              roughness={0.95}
+            />
           </mesh>
         </group>
       ))}

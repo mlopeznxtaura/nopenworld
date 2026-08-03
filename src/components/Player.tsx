@@ -14,6 +14,8 @@ const GRAVITY = 30
 const PLAYER_HEIGHT = 2
 const STAMINA_SPRINT_DRAIN = 18
 const STAMINA_REGEN = 22
+const SPAWN_X = 5
+const SPAWN_Z = 4
 
 export type MeleeTarget = {
   position: THREE.Vector3
@@ -48,8 +50,15 @@ export function Player() {
   const velocity = useRef(new THREE.Vector3())
   const direction = useRef(new THREE.Vector3())
   const attackCooldown = useRef(0)
+  const spawned = useRef(false)
 
   useFrame((state, delta) => {
+    if (!spawned.current) {
+      const ground = getTerrainHeight(SPAWN_X, SPAWN_Z)
+      positionRef.current.set(SPAWN_X, ground + PLAYER_HEIGHT, SPAWN_Z)
+      spawned.current = true
+    }
+
     const { forward, backward, left, right, jump, sprint, attack } = controls
     const moving = forward || backward || left || right
 
