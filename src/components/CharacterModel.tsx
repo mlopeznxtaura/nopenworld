@@ -8,12 +8,13 @@ import type { CharacterConfig } from '../game/characterConfig'
 import { usePlayerStore } from '../game/playerState'
 import { useCharacter } from '../game/characterState'
 import {
-  buildArcaneSword,
   buildBelt,
   buildChainSleeve,
+  buildForestAxe,
+  buildForestBow,
   buildGauntlet,
   buildHair,
-  buildSheathedBlades,
+  buildHuntingKnife,
   buildSkinNeck,
   buildTabard,
   buildTail,
@@ -57,6 +58,13 @@ export function CharacterModel({
   const s = config.scale * BASE
 
   useEffect(() => {
+    // Explicit color deps so Hair / Tabard / Trim / Glow always rebuild gear
+    void config.skinTone
+    void config.hairColor
+    void config.tunicColor
+    void config.trimColor
+    void config.gemColor
+
     tintHumanBase(clone, config)
     hipsRef.current = findBone(clone, 'Hips')
     headMeshesRef.current = []
@@ -65,7 +73,15 @@ export function CharacterModel({
         headMeshesRef.current.push(o)
       }
     })
-  }, [clone, config])
+  }, [
+    clone,
+    config,
+    config.skinTone,
+    config.hairColor,
+    config.tunicColor,
+    config.trimColor,
+    config.gemColor,
+  ])
 
   useEffect(() => {
     if (preview) {
@@ -102,9 +118,13 @@ export function CharacterModel({
       hips.add(belt)
       cleanups.push(() => hips.remove(belt))
 
-      const sheaths = buildSheathedBlades()
-      hips.add(sheaths)
-      cleanups.push(() => hips.remove(sheaths))
+      const knife = buildHuntingKnife(config.trimColor)
+      hips.add(knife)
+      cleanups.push(() => hips.remove(knife))
+
+      const bow = buildForestBow(config.trimColor)
+      hips.add(bow)
+      cleanups.push(() => hips.remove(bow))
     }
 
     if (head) {
@@ -150,18 +170,27 @@ export function CharacterModel({
     }
 
     if (rightHand && showWeapon) {
-      const sword = buildArcaneSword(config.gemColor, config.trimColor)
-      rightHand.add(sword)
-      swordRef.current = sword
-      sword.position.set(0, 0.08, 0.1)
+      const axe = buildForestAxe(config.trimColor)
+      rightHand.add(axe)
+      swordRef.current = axe
+      axe.position.set(0.02, 0.06, 0.08)
       cleanups.push(() => {
-        rightHand.remove(sword)
+        rightHand.remove(axe)
         swordRef.current = null
       })
     }
 
     return () => cleanups.forEach((fn) => fn())
-  }, [clone, config, showWeapon])
+  }, [
+    clone,
+    config,
+    config.skinTone,
+    config.hairColor,
+    config.tunicColor,
+    config.trimColor,
+    config.gemColor,
+    showWeapon,
+  ])
 
   const fadeTo = (action: AnimationAction | null, duration = 0.25) => {
     if (!action || currentAction.current === action) return

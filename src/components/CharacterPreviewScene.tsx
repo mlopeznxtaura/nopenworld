@@ -34,7 +34,18 @@ export function CharacterPreviewScene({ onReady }: CharacterPreviewSceneProps) {
         <meshBasicMaterial color="#88b8d8" transparent opacity={0.12} depthWrite={false} />
       </mesh>
       <group ref={rigRef}>
-        <CharacterPreviewRig config={config} />
+        <CharacterPreviewRig
+          key={[
+            config.skinTone,
+            config.hairColor,
+            config.tunicColor,
+            config.trimColor,
+            config.gemColor,
+            config.build,
+            config.scale,
+          ].join('|')}
+          config={config}
+        />
       </group>
       <OrbitControls
         enablePan={false}
