@@ -36,7 +36,7 @@ export function StalkerWolf({ spawnX, spawnZ, id = 'stalker-0' }: StalkerWolfPro
   const stateRef = useRef<StalkerState>('IdleWatch')
   const [hits, setHits] = useState(0)
   const hitsRef = useRef(0)
-  const [hitFlash, setHitFlash] = useState(0)
+  const hitFlashRef = useRef(0)
   const eyePulse = useRef(0)
   const lightRef = useRef<THREE.PointLight>(null)
   const damageCooldown = useRef(0)
@@ -85,7 +85,7 @@ export function StalkerWolf({ spawnX, spawnZ, id = 'stalker-0' }: StalkerWolfPro
       onHit: () => {
         if (stateRef.current === 'Dead') return
         playHitSound()
-        setHitFlash(1)
+        hitFlashRef.current = 1
         const next = hitsRef.current + 1
         hitsRef.current = next
         setHits(next)
@@ -116,7 +116,10 @@ export function StalkerWolf({ spawnX, spawnZ, id = 'stalker-0' }: StalkerWolfPro
     const fireDist = Math.hypot(playerPos.x, playerPos.z)
     const beaconDist = Math.hypot(playerPos.x - 80, playerPos.z + 60)
     if (fireDist < 14 || beaconDist < 18) {
-      if (state === 'Sprint') setState('IdleWatch')
+      if (stateRef.current === 'Sprint') {
+        stateRef.current = 'IdleWatch'
+        setState('IdleWatch')
+      }
       return
     }
 
@@ -136,19 +139,25 @@ export function StalkerWolf({ spawnX, spawnZ, id = 'stalker-0' }: StalkerWolfPro
       if (dist < 1.8 && damageCooldown.current <= 0) {
         damage(1)
         damageCooldown.current = 1.1
-        setState('Alert')
+        if (stateRef.current === 'Sprint') {
+          stateRef.current = 'Alert'
+          setState('Alert')
+        }
       }
 
       groupRef.current.rotation.y = Math.atan2(dir.x, dir.z)
     }
 
-    if (hitFlash > 0) setHitFlash((f) => Math.max(0, f - delta * 3))
+    if (hitFlashRef.current > 0) {
+      hitFlashRef.current = Math.max(0, hitFlashRef.current - delta * 3)
+    }
 
     groupRef.current.position.copy(posRef.current)
   })
 
   if (state === 'Dead') return null
 
+  const hitFlash = hitFlashRef.current
   const emissive = hitFlash > 0 ? '#ff4444' : '#cc0000'
 
   return (

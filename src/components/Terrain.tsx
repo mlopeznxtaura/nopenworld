@@ -6,7 +6,7 @@ export const Terrain = () => {
   const meshRef = useRef<THREE.Mesh>(null)
   
   const geometry = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(500, 500, 200, 200)
+    const geo = new THREE.PlaneGeometry(500, 500, 120, 120)
     geo.rotateX(-Math.PI / 2)
     
     const positions = geo.attributes.position.array as Float32Array
@@ -22,7 +22,7 @@ export const Terrain = () => {
   }, [])
 
   return (
-    <mesh ref={meshRef} geometry={geometry} receiveShadow castShadow>
+    <mesh ref={meshRef} geometry={geometry} receiveShadow>
       <meshStandardMaterial 
         color="#4a7c59" 
         roughness={0.92}

@@ -1,6 +1,6 @@
 import { Sky } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
-import { useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { StylizedSun } from './StylizedSun'
 import {
@@ -90,18 +90,49 @@ function computeLighting(p: number, sunPos: THREE.Vector3) {
   }
 }
 
+function ManagedSky({
+  sunPosRef,
+  turbidityRef,
+  rayleighRef,
+}: {
+  sunPosRef: { current: THREE.Vector3 }
+  turbidityRef: { current: number }
+  rayleighRef: { current: number }
+}) {
+  const skyRef = useRef<THREE.Mesh>(null)
+
+  useFrame(() => {
+    const sky = skyRef.current
+    if (!sky?.material) return
+    const mat = sky.material as THREE.ShaderMaterial
+    const u = mat.uniforms
+    if (u.sunPosition) u.sunPosition.value.copy(sunPosRef.current)
+    if (u.turbidity) u.turbidity.value = turbidityRef.current
+    if (u.rayleigh) u.rayleigh.value = rayleighRef.current
+  })
+
+  return (
+    <Sky
+      ref={skyRef}
+      sunPosition={[100, 20, 100]}
+      turbidity={3}
+      rayleigh={0.35}
+      mieCoefficient={0.006}
+      mieDirectionalG={0.7}
+      distance={450000}
+    />
+  )
+}
+
 export const SceneEnvironment = () => {
   const sunRef = useRef<THREE.DirectionalLight>(null)
   const ambientRef = useRef<THREE.AmbientLight>(null)
   const sunPosRef = useRef(new THREE.Vector3(100, 20, 100))
+  const goldenHourRef = useRef(0)
+  const turbidityRef = useRef(3)
+  const rayleighRef = useRef(0.35)
   const { scene } = useThree()
   const { positionRef, snapRef } = usePlayerStore()
-
-  const [sunPosition, setSunPosition] = useState<[number, number, number]>([100, 20, 100])
-  const [skyParams, setSkyParams] = useState({ turbidity: 3, rayleigh: 0.35 })
-  const [goldenHour, setGoldenHour] = useState(0)
-  const [exposureDarkness, setExposureDarkness] = useState(0)
-  const frameRef = useRef(0)
 
   useFrame(({ clock }) => {
     const elapsed = clock.elapsedTime
@@ -115,6 +146,9 @@ export const SceneEnvironment = () => {
     const sunPos = sunPositionFromProgress(orbitP)
     sunPosRef.current.copy(sunPos)
     const lighting = computeLighting(orbitP, sunPos)
+    goldenHourRef.current = lighting.goldenHour
+    turbidityRef.current = lighting.turbidity
+    rayleighRef.current = lighting.rayleigh
 
     const px = positionRef.current.x
     const pz = positionRef.current.z
@@ -150,14 +184,6 @@ export const SceneEnvironment = () => {
       fog.near = fogNear
       fog.far = fogFar
     }
-
-    frameRef.current += 1
-    if (frameRef.current % 2 === 0) {
-      setSunPosition([sunPos.x, sunPos.y, sunPos.z])
-      setSkyParams({ turbidity: lighting.turbidity, rayleigh: lighting.rayleigh })
-      setGoldenHour(lighting.goldenHour)
-      setExposureDarkness(exposureCrush)
-    }
   })
 
   return (
@@ -170,8 +196,8 @@ export const SceneEnvironment = () => {
         position={[100, 200, 50]}
         intensity={1.1}
         color="#fff4d0"
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
         shadow-camera-near={0.5}
         shadow-camera-far={500}
         shadow-camera-left={-100}
@@ -180,21 +206,13 @@ export const SceneEnvironment = () => {
         shadow-camera-bottom={-100}
         shadow-bias={-0.0001}
       />
-      <StylizedSun positionRef={sunPosRef} goldenHour={goldenHour} />
-      <Sky
-        sunPosition={sunPosition}
-        turbidity={skyParams.turbidity}
-        rayleigh={skyParams.rayleigh}
-        mieCoefficient={0.006}
-        mieDirectionalG={0.7}
-        distance={450000}
+      <StylizedSun positionRef={sunPosRef} goldenHourRef={goldenHourRef} />
+      <ManagedSky
+        sunPosRef={sunPosRef}
+        turbidityRef={turbidityRef}
+        rayleighRef={rayleighRef}
       />
       <fog attach="fog" args={['#a8c8e8', 20, 150]} />
-      {exposureDarkness > 0.1 && (
-        <mesh position={[0, 0, -1]}>
-          {/* Vignette boost handled in post; ambient crush is primary */}
-        </mesh>
-      )}
     </>
   )
 }

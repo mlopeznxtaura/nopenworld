@@ -37,10 +37,38 @@ export function SurvivalHUD() {
   })
 
   useEffect(() => {
+    let prevKey = ''
     const tick = () => {
       const s = snapRef.current
       const p = progressRef.current
       const t = liveTimeSnapshot.current
+      const key = [
+        Math.ceil(s.health),
+        s.maxHealth,
+        Math.round(s.stamina),
+        s.wood,
+        s.stone,
+        s.food,
+        Math.round(s.hunger),
+        Math.round(s.cold),
+        s.hitFlash > 0.1,
+        t.isDaylight,
+        Math.round(t.nightFactor * 100),
+        Math.round(s.weaponDurability),
+        s.isGliding,
+        p.spiritOrbs,
+        p.korokSeeds,
+        p.rupees,
+        p.shrinesCompleted,
+        p.mapRegionsUnlocked,
+        p.paragliderUnlocked,
+        p.notifications.length,
+        p.activeQuestId,
+        p.questCompleted.size,
+        JSON.stringify(p.questProgress),
+      ].join('|')
+      if (key === prevKey) return
+      prevKey = key
       setUi({
         health: s.health,
         maxHealth: s.maxHealth,
@@ -67,7 +95,7 @@ export function SurvivalHUD() {
         questCompleted: new Set(p.questCompleted),
       })
     }
-    const id = setInterval(tick, 100)
+    const id = setInterval(tick, 200)
     return () => clearInterval(id)
   }, [snapRef, progressRef])
 

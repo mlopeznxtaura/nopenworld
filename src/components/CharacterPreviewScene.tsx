@@ -1,4 +1,4 @@
-import { Environment, OrbitControls } from '@react-three/drei'
+import { OrbitControls } from '@react-three/drei'
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { CharacterPreviewRig } from './CharacterModel'
@@ -25,12 +25,8 @@ export function CharacterPreviewScene({ onReady }: CharacterPreviewSceneProps) {
         position={[6, 12, 8]}
         intensity={1.6}
         color="#fff8e8"
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
       />
       <directionalLight position={[-4, 6, -2]} intensity={0.35} color="#88b8ff" />
-      <Environment preset="sunset" />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.95, 0]} receiveShadow>
         <circleGeometry args={[4, 48]} />
         <meshStandardMaterial color="#5a7a52" roughness={0.92} />

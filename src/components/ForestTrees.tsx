@@ -122,7 +122,7 @@ export function useForestLayout() {
       rotation: number
     }> = []
 
-    for (let i = 0; i < 95; i++) {
+    for (let i = 0; i < 55; i++) {
       const x = (Math.random() - 0.5) * 280
       const z = (Math.random() - 0.5) * 280
       if (Math.abs(x) < 18 && Math.abs(z) < 18) continue
@@ -137,7 +137,7 @@ export function useForestLayout() {
       })
     }
 
-    for (let i = 0; i < 140; i++) {
+    for (let i = 0; i < 70; i++) {
       const x = (Math.random() - 0.5) * 260
       const z = (Math.random() - 0.5) * 260
       if (Math.abs(x) < 12 && Math.abs(z) < 12) continue

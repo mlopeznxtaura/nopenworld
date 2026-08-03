@@ -1,6 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
+import { installKeyboardListeners } from '../game/inputState'
 import { usePlayerControls } from '../hooks/usePlayerControls'
 import { getTerrainHeight } from '../utils/noise'
 import { usePlayerStore } from '../game/playerState'
@@ -71,6 +72,11 @@ export function Player() {
   const spawned = useRef(false)
   const cameraGoal = useRef(new THREE.Vector3())
   const shakeOffset = useRef(new THREE.Vector3())
+  const wasDeadRef = useRef(false)
+
+  useEffect(() => {
+    return installKeyboardListeners()
+  }, [])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -95,11 +101,16 @@ export function Player() {
     }
 
     if (snapRef.current.health <= 0) {
-      const ground = getTerrainHeight(SPAWN_X, SPAWN_Z)
-      positionRef.current.set(SPAWN_X, ground + PLAYER_HEIGHT, SPAWN_Z)
-      velocityY.current = 0
-      horizontalVel.current.set(0, 0, 0)
-      resetVitals()
+      if (!wasDeadRef.current) {
+        wasDeadRef.current = true
+        const ground = getTerrainHeight(SPAWN_X, SPAWN_Z)
+        positionRef.current.set(SPAWN_X, ground + PLAYER_HEIGHT, SPAWN_Z)
+        velocityY.current = 0
+        horizontalVel.current.set(0, 0, 0)
+        resetVitals()
+      }
+    } else {
+      wasDeadRef.current = false
     }
 
     const { forward, backward, left, right, jump, sprint, attack } = controls

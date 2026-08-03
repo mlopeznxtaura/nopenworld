@@ -56,9 +56,9 @@ function GameScene({ phase }: { phase: AppPhase }) {
             <WorldContent />
           </>
         )}
-        <EffectComposer>
-          <Bloom luminanceThreshold={0.78} mipmapBlur intensity={1.55} />
-          <Vignette offset={0.12} darkness={1.15} />
+        <EffectComposer multisampling={0}>
+          <Bloom luminanceThreshold={0.85} mipmapBlur intensity={0.9} />
+          <Vignette offset={0.12} darkness={0.85} />
         </EffectComposer>
       </TimeProvider>
     </Canvas>
