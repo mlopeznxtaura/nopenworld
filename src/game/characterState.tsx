@@ -7,7 +7,8 @@ import {
   type ReactNode,
 } from 'react'
 import {
-  DEFAULT_CHARACTER,
+  loadCharacterConfig,
+  saveCharacterConfig,
   type CharacterConfig,
   type ViewMode,
 } from './characterConfig'
@@ -23,12 +24,16 @@ type CharacterStore = {
 const CharacterContext = createContext<CharacterStore | null>(null)
 
 export function CharacterProvider({ children }: { children: ReactNode }) {
-  const [config, setConfigState] = useState<CharacterConfig>(DEFAULT_CHARACTER)
+  const [config, setConfigState] = useState<CharacterConfig>(loadCharacterConfig)
   const viewModeRef = useRef<ViewMode>('first')
   const [viewMode, setViewMode] = useState<ViewMode>('first')
 
   const setConfig = useCallback((patch: Partial<CharacterConfig>) => {
-    setConfigState((c) => ({ ...c, ...patch }))
+    setConfigState((c) => {
+      const next = { ...c, ...patch }
+      saveCharacterConfig(next)
+      return next
+    })
   }, [])
 
   const toggleViewMode = useCallback(() => {

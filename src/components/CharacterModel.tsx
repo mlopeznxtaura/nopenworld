@@ -166,9 +166,9 @@ export function CharacterModel({
   }
 
   useFrame((state, delta) => {
-    if (!preview && mixer) {
-      mixer.update(delta)
+    if (mixer) mixer.update(delta)
 
+    if (!preview) {
       const { isMoving, isSprinting, speed } = moveStateRef.current
       const idle = actions.Idle
       const walk = actions.Walk
@@ -182,7 +182,7 @@ export function CharacterModel({
         walk.timeScale = THREE.MathUtils.clamp(speed / WALK_ANIM_SPEED, 0.75, 1.35)
       } else if (idle) {
         fadeTo(idle, 0.35)
-        if (idle) idle.timeScale = 1
+        idle.timeScale = 1
       }
 
       const hips = hipsRef.current

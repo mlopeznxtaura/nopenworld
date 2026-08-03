@@ -1,12 +1,20 @@
 import { Environment, OrbitControls } from '@react-three/drei'
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { CharacterPreviewRig } from './CharacterModel'
 import { useCharacter } from '../game/characterState'
 
-export function CharacterPreviewScene() {
+type CharacterPreviewSceneProps = {
+  onReady?: () => void
+}
+
+export function CharacterPreviewScene({ onReady }: CharacterPreviewSceneProps) {
   const { config } = useCharacter()
   const rigRef = useRef<THREE.Group>(null)
+
+  useEffect(() => {
+    onReady?.()
+  }, [onReady])
 
   return (
     <>

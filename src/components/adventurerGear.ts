@@ -162,6 +162,12 @@ export function buildBelt(config: CharacterConfig): THREE.Group {
     mat('#3a2a1e', { roughness: 0.9 }),
   )
   belt.add(band)
+  const buckle = new THREE.Mesh(
+    new THREE.BoxGeometry(0.1, 0.08, 0.04),
+    mat(config.trimColor, { metalness: 0.7, roughness: 0.35 }),
+  )
+  buckle.position.set(0, 0, 0.16)
+  belt.add(buckle)
   ;[-0.2, 0.15].forEach((x) => {
     const pouch = new THREE.Mesh(
       new THREE.BoxGeometry(0.12, 0.14, 0.1),

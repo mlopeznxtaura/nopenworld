@@ -14,12 +14,33 @@ export type ViewMode = 'first' | 'third'
 
 export const DEFAULT_CHARACTER: CharacterConfig = {
   skinTone: '#c4a882',
-  hairColor: '#1a1410',
+  hairColor: '#121010',
   tunicColor: '#4a7c45',
   trimColor: '#d4af37',
   gemColor: '#5eb8ff',
   scale: 1,
   build: 'slim',
+}
+
+export const CHARACTER_STORAGE_KEY = 'wild-breath-character-v1'
+
+export function loadCharacterConfig(): CharacterConfig {
+  try {
+    const raw = sessionStorage.getItem(CHARACTER_STORAGE_KEY)
+    if (!raw) return { ...DEFAULT_CHARACTER }
+    const parsed = JSON.parse(raw) as Partial<CharacterConfig>
+    return { ...DEFAULT_CHARACTER, ...parsed }
+  } catch {
+    return { ...DEFAULT_CHARACTER }
+  }
+}
+
+export function saveCharacterConfig(config: CharacterConfig) {
+  try {
+    sessionStorage.setItem(CHARACTER_STORAGE_KEY, JSON.stringify(config))
+  } catch {
+    /* ignore quota / private mode */
+  }
 }
 
 export const SKIN_PRESETS = [
